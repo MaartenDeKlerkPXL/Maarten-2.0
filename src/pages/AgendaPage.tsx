@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Briefcase, ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { useData } from "../lib/store";
 import { useMediaQuery, useToday } from "../lib/hooks";
 import { addIsoDays, fmt, isoDow, parseIso } from "../lib/dates";
@@ -7,11 +7,13 @@ import { agendaFor, weekDates } from "../lib/logic";
 import { DayAgenda, WeekGrid } from "../components/Agenda";
 import { useEditor } from "../components/EditorContext";
 import { CategoryDot, PageHeader } from "../components/ui";
+import { WorkWeekSheet } from "../components/WorkWeekSheet";
 
 export default function AgendaPage() {
   const today = useToday();
   const desktop = useMediaQuery("(min-width: 1024px)");
   const [selected, setSelected] = useState(today);
+  const [workWeek, setWorkWeek] = useState(false);
   const { openTodo, newTodo } = useEditor();
   const data = useData();
   const week = weekDates(selected);
@@ -38,7 +40,10 @@ export default function AgendaPage() {
       <button onClick={() => shift(7)} className="btn btn-ghost p-2" aria-label="Volgende week">
         <ChevronRight className="size-4" />
       </button>
-      <button onClick={() => newTodo({ due_date: selected, category_id: data.categories.find((c) => c.slug === "werk")?.id ?? null })} className="btn btn-primary px-3 py-2 text-xs">
+      <button onClick={() => setWorkWeek(true)} className="btn btn-ghost px-3 py-2 text-xs">
+        <Briefcase className="size-4 text-[#3B82F6]" /> Werkweek
+      </button>
+      <button onClick={() => newTodo({ due_date: selected })} className="btn btn-primary px-3 py-2 text-xs">
         <Plus className="size-4" /> <span className="hidden sm:inline">Toevoegen</span>
       </button>
     </div>
@@ -63,6 +68,7 @@ export default function AgendaPage() {
         <PageHeader title="Agenda" subtitle={title} action={nav} />
         <WeekGrid dates={week} today={today} onOpenTodo={openTodo} onCreate={(date, time) => newTodo({ due_date: date, due_time: time })} />
         {legend}
+        {workWeek && <WorkWeekSheet onClose={() => setWorkWeek(false)} />}
       </div>
     );
   }
@@ -84,6 +90,7 @@ export default function AgendaPage() {
         }
         action={
           <div className="flex items-center gap-1.5">
+            <button onClick={() => setWorkWeek(true)} className="btn btn-ghost p-2" aria-label="Werkweek invoeren"><Briefcase className="size-4 text-[#3B82F6]" /></button>
             <button onClick={() => shift(-7)} className="btn btn-ghost p-2" aria-label="Vorige week"><ChevronLeft className="size-4" /></button>
             <button onClick={() => shift(7)} className="btn btn-ghost p-2" aria-label="Volgende week"><ChevronRight className="size-4" /></button>
             <button onClick={() => newTodo({ due_date: selected })} className="btn btn-primary p-2" aria-label="Toevoegen"><Plus className="size-4" /></button>
@@ -119,6 +126,7 @@ export default function AgendaPage() {
         <DayAgenda date={selected} onOpenTodo={openTodo} isToday={selected === today} />
       </section>
       {legend}
+      {workWeek && <WorkWeekSheet onClose={() => setWorkWeek(false)} />}
     </div>
   );
 }

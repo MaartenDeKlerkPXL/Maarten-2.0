@@ -14,6 +14,11 @@ export interface Settings {
   water_reminders: boolean;
   water_start: string;
   water_end: string;
+  pushup_start_date: string;
+  pushup_start_target: number;
+  pushup_step: number;
+  pushup_goal: number;
+  pushup_current_target: number;
 }
 
 export interface Category {
@@ -113,4 +118,44 @@ export interface RecurringTodo {
   is_event: boolean;
   remind_until_day: number | null;
   active: boolean;
+}
+
+export type ExerciseKind = "weight" | "assist" | "reps" | "time" | "cardio";
+
+export interface Exercise {
+  id: string;
+  name: string;
+  kind: ExerciseKind;
+  grp: "warmup" | "kracht" | "core";
+  increment_kg: number;
+  sort: number;
+  active: boolean;
+}
+
+export interface Workout {
+  id: string;
+  workout_date: string;
+  notes: string | null;
+  finished_at: string | null;
+  created_at: string;
+}
+
+export interface WorkoutSet {
+  id: string;
+  workout_id: string;
+  exercise_id: string;
+  set_no: number;
+  weight_kg: number | null;
+  reps: number | null;
+  seconds: number | null;
+  distance_km: number | null;
+  level: number | null;
+  created_at: string;
+}
+
+export interface PushupLog {
+  id: string;
+  log_date: string;
+  reps: number;
+  created_at: string;
 }

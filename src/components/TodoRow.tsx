@@ -1,6 +1,6 @@
-import { Bell, CalendarDays, Clock, Flag, MapPin, Repeat } from "lucide-react";
+import { ArrowRight, Bell, CalendarDays, Clock, Flag, MapPin, Repeat } from "lucide-react";
 import type { Todo } from "../lib/types";
-import { hm, relativeDay } from "../lib/dates";
+import { addIsoDays, hm, relativeDay, todayIso } from "../lib/dates";
 import { useCategoryMap, useData } from "../lib/store";
 import { useToast } from "./Toast";
 import { haptic } from "../lib/hooks";
@@ -17,7 +17,7 @@ export function SourceBadge({ source }: { source: Todo["source"] }) {
 
 export function TodoRow({ todo, onOpen, showDate = true }: { todo: Todo; onOpen: (t: Todo) => void; showDate?: boolean }) {
   const cats = useCategoryMap();
-  const { toggleTodo } = useData();
+  const { toggleTodo, updateTodo } = useData();
   const toast = useToast();
   const cat = todo.category_id ? cats.get(todo.category_id) : undefined;
   const color = cat?.color ?? "#3B82F6";
@@ -46,6 +46,21 @@ export function TodoRow({ todo, onOpen, showDate = true }: { todo: Todo; onOpen:
             {todo.title}
           </p>
           {todo.priority > 0 && !done && <Flag className="mt-0.5 size-3.5 shrink-0" style={{ color: PRIORITY_COLORS[todo.priority] }} fill="currentColor" />}
+          {!done && !todo.is_event && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const tomorrow = addIsoDays(todayIso(), 1);
+                const prev = todo.due_date;
+                updateTodo(todo.id, { due_date: tomorrow });
+                toast.show("Naar morgen verplaatst", "info", { label: "Ongedaan", run: () => updateTodo(todo.id, { due_date: prev }) });
+              }}
+              className="-my-1 hidden shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-muted transition hover:bg-surface-3 hover:text-text group-hover:inline-flex"
+              title="Naar morgen"
+            >
+              Morgen <ArrowRight className="size-3" />
+            </button>
+          )}
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted">
           {showDate && todo.due_date && (

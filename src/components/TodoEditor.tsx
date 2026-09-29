@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Archive, Check, Trash2 } from "lucide-react";
+import { Archive, Check, Clock3, Trash2 } from "lucide-react";
 import { Sheet } from "./Sheet";
 import { CategoryPicker, Field, Segmented } from "./ui";
 import { useData, type NewTodo } from "../lib/store";
 import type { Todo } from "../lib/types";
 import { useToast } from "./Toast";
-import { todayIso } from "../lib/dates";
+import { addIsoDays, fmt, isoDow, parseIso, todayIso } from "../lib/dates";
 
 const REMIND_OPTIONS = [
   { days: 1, label: "1 dag" },
@@ -15,6 +15,17 @@ const REMIND_OPTIONS = [
 ];
 
 export type TodoDraft = NewTodo & { id?: string };
+
+export function postponeOptions() {
+  const today = todayIso();
+  const monday = addIsoDays(today, 8 - isoDow(parseIso(today)));
+  return [
+    { label: "Vandaag", date: today },
+    { label: "Morgen", date: addIsoDays(today, 1) },
+    { label: `Maandag ${fmt(monday, "d/M")}`, date: monday },
+    { label: "Over 1 week", date: addIsoDays(today, 7) },
+  ];
+}
 
 export function TodoEditor({ draft, onClose }: { draft: TodoDraft | null; onClose: () => void }) {
   const { categories, addTodo, updateTodo, removeTodo, toggleTodo, todos } = useData();
@@ -100,6 +111,25 @@ export function TodoEditor({ draft, onClose }: { draft: TodoDraft | null; onClos
           autoFocus={!existing}
           onChange={(e) => set({ title: e.target.value })}
         />
+        {existing && !existing.done_at && !existing.is_event && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="mr-1 inline-flex items-center gap-1 text-xs font-medium text-muted"><Clock3 className="size-3.5" /> Uitstellen</span>
+            {postponeOptions().map((o) => (
+              <button
+                key={o.label}
+                type="button"
+                onClick={() => {
+                  updateTodo(existing.id, { due_date: o.date });
+                  toast.show(`Verplaatst naar ${o.label.toLowerCase()}`);
+                  onClose();
+                }}
+                className="rounded-full border border-line bg-surface-2 px-3 py-1.5 text-xs font-medium text-text transition hover:border-accent/50 active:scale-95"
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        )}
         <Field label="Datum">
           <input type="date" className="input" value={form.due_date ?? ""} onChange={(e) => set({ due_date: e.target.value || null })} />
         </Field>

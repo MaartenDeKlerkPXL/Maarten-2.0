@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ComponentType } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { CalendarDays, Home, ListTodo, Loader2, Menu, Plus, Target } from "lucide-react";
+import { CalendarDays, Dumbbell, Home, ListTodo, Loader2, Menu, Plus, Target } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import { DataProvider, useData } from "./lib/store";
 import { navigate, usePath } from "./lib/router";
@@ -15,6 +15,8 @@ import Today from "./pages/Today";
 const Todos = lazy(() => import("./pages/Todos"));
 const AgendaPage = lazy(() => import("./pages/AgendaPage"));
 const Goals = lazy(() => import("./pages/Goals"));
+const Fitness = lazy(() => import("./pages/Fitness"));
+const WorkoutPage = lazy(() => import("./pages/Workout"));
 const More = lazy(() => import("./pages/More"));
 const Birthdays = lazy(() => import("./pages/more/Birthdays"));
 const Schedule = lazy(() => import("./pages/more/Schedule"));
@@ -27,6 +29,7 @@ const ROUTES: Record<string, ComponentType> = {
   "/todo": Todos,
   "/agenda": AgendaPage,
   "/doelen": Goals,
+  "/fitness": Fitness,
   "/meer": More,
   "/meer/verjaardagen": Birthdays,
   "/meer/rooster": Schedule,
@@ -39,7 +42,8 @@ const NAV = [
   { path: "/", label: "Vandaag", icon: Home },
   { path: "/todo", label: "Todo", icon: ListTodo },
   { path: "/agenda", label: "Agenda", icon: CalendarDays },
-  { path: "/doelen", label: "Doelen", icon: Target },
+  { path: "/fitness", label: "Fitness", icon: Dumbbell },
+  { path: "/doelen", label: "Doelen", icon: Target, desktopOnly: true },
   { path: "/meer", label: "Meer", icon: Menu },
 ];
 
@@ -90,7 +94,7 @@ function TabBar({ path }: { path: string }) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-bg/80 pb-safe backdrop-blur-2xl lg:hidden">
       <div className="mx-auto grid max-w-lg grid-cols-5 px-2">
-        {NAV.map((n) => {
+        {NAV.filter((n) => !n.desktopOnly).map((n) => {
           const active = isActive(n.path, path);
           return (
             <button key={n.path} onClick={() => navigate(n.path)} className="flex flex-col items-center gap-1 pb-1.5 pt-2.5 transition active:scale-90">
@@ -131,6 +135,7 @@ function Shell() {
   const path = usePath();
   const { loading, todos, syncEvents } = useData();
   const [adding, setAdding] = useState(false);
+  const workoutId = path.startsWith("/fitness/training/") ? path.slice("/fitness/training/".length) : null;
   const Page = ROUTES[path] ?? Today;
 
   // Eerste keer: F1 en Roda JC meteen ophalen i.p.v. te wachten op de cron
@@ -165,13 +170,13 @@ function Shell() {
           ) : (
             <Suspense fallback={<Spinner />}>
               <div key={path} className="animate-fade-in">
-                <Page />
+                {workoutId ? <WorkoutPage id={workoutId} /> : <Page />}
               </div>
             </Suspense>
           )}
         </div>
       </main>
-      {!path.startsWith("/meer") && <button
+      {!path.startsWith("/meer") && !path.startsWith("/fitness") && <button
         onClick={() => setAdding(true)}
         className="fixed bottom-[calc(env(safe-area-inset-bottom)+80px)] right-4 z-40 grid size-14 place-items-center rounded-full bg-gradient-to-br from-accent-2 to-accent text-white shadow-[0_12px_32px_-8px_rgb(59_130_246/0.9)] transition active:scale-90 lg:hidden"
         aria-label="Snel toevoegen"

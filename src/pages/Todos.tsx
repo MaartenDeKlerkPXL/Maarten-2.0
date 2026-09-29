@@ -12,7 +12,7 @@ import { CategoryDot, Empty, PageHeader } from "../components/ui";
 type Filter = "all" | "tasks" | "events";
 
 export default function Todos() {
-  const { todos, categories } = useData();
+  const { todos, categories, updateTodo } = useData();
   const { openTodo, newTodo } = useEditor();
   const today = useToday();
   const [filter, setFilter] = useState<Filter>("all");
@@ -100,6 +100,18 @@ export default function Todos() {
                   {g.title} <span className="ml-1 text-faint">{g.todos.length}</span>
                 </h2>
                 {collapsible && <ChevronDown className={`size-4 text-muted transition ${isOpen ? "rotate-180" : ""}`} />}
+                {g.key === "overdue" && (
+                  <span
+                    role="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      g.todos.filter((t) => !t.is_event).forEach((t) => updateTodo(t.id, { due_date: today }));
+                    }}
+                    className="rounded-full bg-danger/10 px-2.5 py-1 text-[11px] font-semibold text-danger"
+                  >
+                    Alles naar vandaag
+                  </span>
+                )}
               </button>
               <div className="-mx-2">
                 {shown.map((t) => (

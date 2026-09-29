@@ -3,7 +3,8 @@ import { supabase } from "./supabase";
 import { addIsoDays, todayIso } from "./dates";
 import { useToast } from "../components/Toast";
 import type {
-  Birthday, Category, Habit, HabitLog, HabitTimer, RecurringTodo, ScheduleItem, Settings, Todo, WaterLog,
+  Birthday, Category, Exercise, Habit, HabitLog, HabitTimer, PushupLog, RecurringTodo, ScheduleItem, Settings, Todo,
+  WaterLog, Workout, WorkoutSet,
 } from "./types";
 
 interface DataState {
@@ -18,17 +19,22 @@ interface DataState {
   birthdays: Birthday[];
   water: WaterLog[];
   recurring: RecurringTodo[];
+  exercises: Exercise[];
+  workouts: Workout[];
+  sets: WorkoutSet[];
+  pushups: PushupLog[];
 }
 
 const EMPTY: DataState = {
   loading: true, settings: null, categories: [], todos: [], schedule: [], habits: [], habitLogs: [],
-  timers: [], birthdays: [], water: [], recurring: [],
+  timers: [], birthdays: [], water: [], recurring: [], exercises: [], workouts: [], sets: [], pushups: [],
 };
 
 type ListKey = Exclude<keyof DataState, "loading" | "settings">;
 const TABLES: Record<ListKey, string> = {
   categories: "categories", todos: "todos", schedule: "schedule_items", habits: "habits", habitLogs: "habit_logs",
   timers: "habit_timers", birthdays: "birthdays", water: "water_logs", recurring: "recurring_todos",
+  exercises: "exercises", workouts: "workouts", sets: "workout_sets", pushups: "pushup_logs",
 };
 
 export type NewTodo = Partial<Omit<Todo, "id">> & { title: string };
@@ -52,7 +58,7 @@ function useDataStore() {
         return r.data as T;
       });
     try {
-      const [settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring] = await Promise.all([
+      const [settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring, exercises, workouts, sets, pushups] = await Promise.all([
         q<Settings>(supabase.from("settings").select("*").maybeSingle()),
         q<Category[]>(supabase.from("categories").select("*").order("sort")),
         q<Todo[]>(supabase.from("todos").select("*").is("archived_at", null).order("due_date", { nullsFirst: false }).limit(2000)),
@@ -63,8 +69,12 @@ function useDataStore() {
         q<Birthday[]>(supabase.from("birthdays").select("*").order("month").order("day")),
         q<WaterLog[]>(supabase.from("water_logs").select("*").gte("log_date", since).order("created_at").limit(10000)),
         q<RecurringTodo[]>(supabase.from("recurring_todos").select("*").order("created_at")),
+        q<Exercise[]>(supabase.from("exercises").select("*").order("sort")),
+        q<Workout[]>(supabase.from("workouts").select("*").gte("workout_date", since).order("workout_date").limit(2000)),
+        q<WorkoutSet[]>(supabase.from("workout_sets").select("*").gte("created_at", `${since}T00:00:00Z`).order("created_at").limit(20000)),
+        q<PushupLog[]>(supabase.from("pushup_logs").select("*").gte("log_date", since).order("created_at").limit(10000)),
       ]);
-      setState({ loading: false, settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring });
+      setState({ loading: false, settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring, exercises, workouts, sets, pushups });
     } catch (e) {
       setState((s) => ({ ...s, loading: false }));
       fail(e);
@@ -180,6 +190,28 @@ function useDataStore() {
     upsert("water", { id: crypto.randomUUID(), log_date: todayIso(), ml, label, created_at: new Date().toISOString() }), [upsert]);
   const removeWater = useCallback((id: string) => removeRow("water", id), [removeRow]);
 
+  // ── Pushups
+  const addPushups = useCallback((reps: number) =>
+    upsert("pushups", { id: crypto.randomUUID(), log_date: todayIso(), reps, created_at: new Date().toISOString() }), [upsert]);
+  const removePushup = useCallback((id: string) => removeRow("pushups", id), [removeRow]);
+
+  // ── Fitness
+  const createWorkout = useCallback((date: string) =>
+    upsert("workouts", { id: crypto.randomUUID(), workout_date: date, notes: null, finished_at: null, created_at: new Date().toISOString() }), [upsert]);
+  const updateWorkout = useCallback((id: string, patch: Partial<Workout>) => patchRow("workouts", id, patch), [patchRow]);
+  const deleteWorkout = useCallback(async (id: string) => {
+    setList("sets", (l) => l.filter((x) => x.workout_id !== id));
+    await removeRow("workouts", id);
+  }, [removeRow, setList]);
+  const saveSet = useCallback((set: Partial<WorkoutSet> & { workout_id: string; exercise_id: string }) =>
+    upsert("sets", {
+      id: crypto.randomUUID(), set_no: 1, weight_kg: null, reps: null, seconds: null, distance_km: null, level: null,
+      created_at: new Date().toISOString(), ...set,
+    } as WorkoutSet), [upsert]);
+  const deleteSet = useCallback((id: string) => removeRow("sets", id), [removeRow]);
+  const saveExercise = useCallback((e: Partial<Exercise> & { name: string }) =>
+    upsert("exercises", { kind: "weight", grp: "kracht", increment_kg: 2.5, active: true, sort: 100, ...e } as Exercise), [upsert]);
+
   // ── Verjaardagen, rooster, categorieën
   const saveBirthday = useCallback((b: Partial<Birthday> & { name: string }) =>
     upsert("birthdays", { year: null, is_self: false, notes: null, ...b } as Birthday), [upsert]);
@@ -232,7 +264,8 @@ function useDataStore() {
     ...state, refresh, reloadTodos,
     addTodo, updateTodo, toggleTodo, removeTodo,
     toggleHabit, startTimer, stopTimer, saveHabit, deleteHabit,
-    addWater, removeWater,
+    addWater, removeWater, addPushups, removePushup,
+    createWorkout, updateWorkout, deleteWorkout, saveSet, deleteSet, saveExercise,
     saveBirthday, deleteBirthday, saveSchedule, deleteSchedule, saveCategory,
     saveRecurring, deleteRecurring,
     updateSettings, syncEvents,

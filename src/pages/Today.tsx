@@ -7,6 +7,7 @@ import { groupTodos, logSet, waterByDay, weeklyStatus } from "../lib/logic";
 import { navigate } from "../lib/router";
 import { DailyHabitCard, WeeklyGoalCard } from "../components/HabitCards";
 import { WaterCard } from "../components/WaterCard";
+import { PushupCard } from "../components/PushupCard";
 import { DayAgenda } from "../components/Agenda";
 import { BirthdayAlerts, UpcomingCard } from "../components/Upcoming";
 import { QuickAdd } from "../components/QuickAdd";
@@ -84,6 +85,7 @@ function DailyHabits() {
         {daily.map((h) => (
           <DailyHabitCard key={h.id} habit={h} />
         ))}
+        <PushupCard />
       </div>
     </section>
   );

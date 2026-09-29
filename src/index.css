@@ -1,0 +1,136 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, system-ui, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", Roboto, system-ui, sans-serif;
+
+  --color-bg: #05070d;
+  --color-surface: #0b101b;
+  --color-surface-2: #111827;
+  --color-surface-3: #182236;
+  --color-line: rgb(148 163 184 / 0.1);
+  --color-line-strong: rgb(148 163 184 / 0.18);
+  --color-text: #e8ecf4;
+  --color-muted: #8b95a9;
+  --color-faint: #5b6477;
+  --color-accent: #3b82f6;
+  --color-accent-2: #60a5fa;
+  --color-accent-3: #93c5fd;
+  --color-danger: #f87171;
+  --color-success: #34d399;
+  --color-warn: #fbbf24;
+
+  --animate-pop: pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-sheet-up: sheet-up 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-scale-in: scale-in 0.2s cubic-bezier(0.32, 0.72, 0, 1);
+  --animate-wave: wave 6s linear infinite;
+  --animate-wave-slow: wave 9s linear infinite reverse;
+
+  @keyframes pop {
+    0% { transform: scale(0.85); }
+    60% { transform: scale(1.08); }
+    100% { transform: scale(1); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes sheet-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  @keyframes wave {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes scale-in {
+    from { opacity: 0; transform: scale(0.96) translateY(8px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+}
+
+@layer base {
+  html {
+    background: var(--color-bg);
+    color-scheme: dark;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    min-height: 100dvh;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgb(37 99 235 / 0.16), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgb(56 189 248 / 0.07), transparent 60%),
+      var(--color-bg);
+    background-attachment: fixed;
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-feature-settings: "tnum" 0;
+    overscroll-behavior-y: none;
+  }
+  button, [role="button"] {
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  input, textarea, select {
+    font-size: 16px; /* voorkomt inzoomen op iOS */
+  }
+  ::selection {
+    background: rgb(59 130 246 / 0.35);
+  }
+}
+
+@layer components {
+  .card {
+    @apply relative rounded-3xl border border-line bg-surface/80 backdrop-blur-xl;
+    box-shadow: 0 1px 0 0 rgb(255 255 255 / 0.03) inset, 0 20px 40px -24px rgb(0 0 0 / 0.6);
+  }
+  .card-pad {
+    @apply p-4 sm:p-5;
+  }
+  .section-title {
+    @apply text-[13px] font-semibold uppercase tracking-[0.08em] text-muted;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition active:scale-[0.97] disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-accent text-white shadow-[0_8px_24px_-8px_rgb(59_130_246/0.7)] hover:bg-accent-2;
+  }
+  .btn-ghost {
+    @apply bg-surface-2 text-text hover:bg-surface-3 border border-line;
+  }
+  .btn-danger {
+    @apply bg-danger/10 text-danger hover:bg-danger/20 border border-danger/20;
+  }
+  .input {
+    @apply w-full rounded-xl border border-line bg-surface-2 px-3.5 py-2.5 text-[16px] text-text placeholder:text-faint outline-none transition focus:border-accent/60 focus:ring-4 focus:ring-accent/15;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-medium text-muted;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-xs font-medium text-muted;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.pt-safe { padding-top: env(safe-area-inset-top); }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+.mb-safe { margin-bottom: env(safe-area-inset-bottom); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

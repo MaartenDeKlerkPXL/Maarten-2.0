@@ -56,10 +56,10 @@ function RecurringEditor({ value, onClose }: { value: Partial<RecurringTodo>; on
             </select>
           </Field>
         ) : (
-          <Field label="Dag"><WeekdayPicker single value={[f.weekday ?? 7]} onChange={(v) => set({ weekday: v[0] })} /></Field>
+          <Field group label="Dag"><WeekdayPicker single value={[f.weekday ?? 7]} onChange={(v) => set({ weekday: v[0] })} /></Field>
         )}
         <Field label="Tijd (optioneel)"><input type="time" className="input" value={hm(f.due_time)} onChange={(e) => set({ due_time: e.target.value || null })} /></Field>
-        <Field label="Categorie"><CategoryPicker categories={categories} value={f.category_id ?? null} onChange={(id) => set({ category_id: id })} /></Field>
+        <Field group label="Categorie"><CategoryPicker categories={categories} value={f.category_id ?? null} onChange={(id) => set({ category_id: id })} /></Field>
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-sm font-medium">Het is een gebeurtenis</p>

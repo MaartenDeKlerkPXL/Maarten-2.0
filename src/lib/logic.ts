@@ -186,7 +186,8 @@ export function sortTodos(a: Todo, b: Todo): number {
 }
 
 export function groupTodos(todos: Todo[], today = todayIso()): TodoGroup[] {
-  const open = todos.filter((t) => !t.done_at).sort(sortTodos);
+  // voorbije events (werkdienst, wedstrijd) zijn geen taken meer: alleen nog in de agenda
+  const open = todos.filter((t) => !t.done_at && !(t.is_event && t.due_date && t.due_date < today)).sort(sortTodos);
   const tomorrow = addIsoDays(today, 1);
   const weekEnd = addIsoDays(today, 7);
   const groups: TodoGroup[] = [

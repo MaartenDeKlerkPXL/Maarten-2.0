@@ -155,14 +155,14 @@ function HabitEditor({ habit, onClose }: { habit: Partial<Habit>; onClose: () =>
           <input className="input w-16 text-center text-xl" value={f.emoji} onChange={(e) => set({ emoji: e.target.value })} aria-label="Emoji" />
           <input className="input flex-1" placeholder="Naam" value={f.name ?? ""} onChange={(e) => set({ name: e.target.value })} />
         </div>
-        <Field label="Kleur">
+        <Field group label="Kleur">
           <div className="flex flex-wrap gap-2">
             {COLORS.map((c) => (
               <button key={c} onClick={() => set({ color: c })} className={`size-8 rounded-full transition ${f.color === c ? "ring-2 ring-white ring-offset-2 ring-offset-surface" : ""}`} style={{ background: c }} aria-label={c} />
             ))}
           </div>
         </Field>
-        <Field label="Hoe vaak">
+        <Field group label="Hoe vaak">
           <Segmented options={[{ value: "daily", label: "Elke dag" }, { value: "weekly", label: "Per week" }]} value={f.frequency ?? "daily"} onChange={(v) => set({ frequency: v })} />
         </Field>
         {f.frequency === "weekly" && (
@@ -170,10 +170,10 @@ function HabitEditor({ habit, onClose }: { habit: Partial<Habit>; onClose: () =>
             <Field label={`Doel: ${f.target_per_week}x per week`}>
               <input type="range" min={1} max={7} value={f.target_per_week} onChange={(e) => set({ target_per_week: Number(e.target.value) })} className="w-full accent-[#3B82F6]" />
             </Field>
-            <Field label="Geplande dagen">
+            <Field group label="Geplande dagen">
               <WeekdayPicker value={f.planned_days ?? []} onChange={(v) => set({ planned_days: v })} color={f.color} />
             </Field>
-            <Field label="Inhaaldagen" hint="Als een geplande dag gemist is, krijg je hier een herinnering.">
+            <Field group label="Inhaaldagen" hint="Als een geplande dag gemist is, krijg je hier een herinnering.">
               <WeekdayPicker value={f.backup_days ?? []} onChange={(v) => set({ backup_days: v })} color={f.color} />
             </Field>
           </>

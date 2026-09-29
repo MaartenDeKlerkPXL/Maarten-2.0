@@ -143,13 +143,20 @@ export function Toggle({ checked, onChange, label }: { checked: boolean; onChang
   );
 }
 
-export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: string }) {
-  return (
-    <label className="block">
+/** Formulierveld. Gebruik `group` voor knoppen-groepen: een <label> om knoppen heen
+ *  zou bij een tik op het kopje de eerste knop activeren. */
+export function Field({ label, children, hint, group }: { label: string; children: ReactNode; hint?: string; group?: boolean }) {
+  const inner = (
+    <>
       <span className="label">{label}</span>
       {children}
       {hint && <span className="mt-1 block text-xs text-faint">{hint}</span>}
-    </label>
+    </>
+  );
+  return group ? (
+    <div role="group" aria-label={label} className="block">{inner}</div>
+  ) : (
+    <label className="block">{inner}</label>
   );
 }
 

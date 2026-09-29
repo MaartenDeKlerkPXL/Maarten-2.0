@@ -15,7 +15,7 @@ function useDone(habitId: string) {
 
 /** Dagelijkse gewoonte, optioneel met timer (bv. 15 min Tinder/Bumble). */
 export function DailyHabitCard({ habit }: { habit: Habit }) {
-  const { toggleHabit, timers, startTimer, stopTimer } = useData();
+  const { toggleHabit, setHabitDone, timers, startTimer, stopTimer } = useData();
   const toast = useToast();
   const today = useToday();
   const done = useDone(habit.id);
@@ -36,11 +36,11 @@ export function DailyHabitCard({ habit }: { habit: Habit }) {
     handled.current = timer.ends_at;
     stopTimer(habit.id);
     if (!isDone) {
-      toggleHabit(habit.id, today);
+      setHabitDone(habit.id, today);
       haptic([30, 60, 30]);
       toast.show(`${habit.emoji} ${habit.name}: ${habit.timer_minutes} minuten gedaan!`);
     }
-  }, [finished, timer, isDone, habit, today, stopTimer, toggleHabit, toast]);
+  }, [finished, timer, isDone, habit, today, stopTimer, setHabitDone, toast]);
 
   const mm = Math.floor(remaining / 60_000);
   const ss = Math.floor((remaining % 60_000) / 1000);

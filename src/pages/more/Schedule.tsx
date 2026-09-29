@@ -36,14 +36,14 @@ function ScheduleEditor({ value, onClose }: { value: Partial<ScheduleItem>; onCl
         <Field label="Titel">
           <input className="input" value={f.title ?? ""} onChange={(e) => set({ title: e.target.value })} placeholder="Bijv. UI Design 2" />
         </Field>
-        <Field label="Dag">
+        <Field group label="Dag">
           <WeekdayPicker single value={f.weekday ? [f.weekday] : []} onChange={(v) => set({ weekday: v[0] })} />
         </Field>
         <div className="grid grid-cols-2 gap-2">
           <Field label="Van"><input type="time" className="input" value={hm(f.start_time)} onChange={(e) => set({ start_time: e.target.value })} /></Field>
           <Field label="Tot"><input type="time" className="input" value={hm(f.end_time)} onChange={(e) => set({ end_time: e.target.value })} /></Field>
         </div>
-        <Field label="Categorie">
+        <Field group label="Categorie">
           <CategoryPicker categories={categories} value={f.category_id ?? null} onChange={(id) => set({ category_id: id })} />
         </Field>
         <div className="grid grid-cols-2 gap-2">

@@ -91,28 +91,26 @@ export default function Todos() {
           const shown = isOpen ? g.todos : [];
           return (
             <section key={g.key} className="card card-pad">
-              <button
-                disabled={!collapsible}
-                onClick={() => setExpanded((e) => ({ ...e, [g.key]: !e[g.key] }))}
-                className="mb-1 flex w-full items-center justify-between"
-              >
-                <h2 className={`section-title ${g.tone === "danger" ? "text-danger" : g.tone === "accent" ? "text-accent-2" : ""}`}>
-                  {g.title} <span className="ml-1 text-faint">{g.todos.length}</span>
-                </h2>
-                {collapsible && <ChevronDown className={`size-4 text-muted transition ${isOpen ? "rotate-180" : ""}`} />}
-                {g.key === "overdue" && (
-                  <span
-                    role="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      g.todos.filter((t) => !t.is_event).forEach((t) => updateTodo(t.id, { due_date: today }));
-                    }}
-                    className="rounded-full bg-danger/10 px-2.5 py-1 text-[11px] font-semibold text-danger"
+              <div className="mb-1 flex items-center justify-between gap-2">
+                <button
+                  disabled={!collapsible}
+                  onClick={() => setExpanded((e) => ({ ...e, [g.key]: !e[g.key] }))}
+                  className="flex flex-1 items-center justify-between disabled:cursor-default"
+                >
+                  <h2 className={`section-title ${g.tone === "danger" ? "text-danger" : g.tone === "accent" ? "text-accent-2" : ""}`}>
+                    {g.title} <span className="ml-1 text-faint">{g.todos.length}</span>
+                  </h2>
+                  {collapsible && <ChevronDown className={`size-4 text-muted transition ${isOpen ? "rotate-180" : ""}`} />}
+                </button>
+                {g.key === "overdue" && g.todos.some((t) => !t.is_event) && (
+                  <button
+                    onClick={() => g.todos.filter((t) => !t.is_event).forEach((t) => updateTodo(t.id, { due_date: today }))}
+                    className="rounded-full bg-danger/10 px-2.5 py-1 text-[11px] font-semibold text-danger transition active:scale-95"
                   >
                     Alles naar vandaag
-                  </span>
+                  </button>
                 )}
-              </button>
+              </div>
               <div className="-mx-2">
                 {shown.map((t) => (
                   <TodoRow key={t.id} todo={t} onOpen={openTodo} showDate={g.key !== "today" && g.key !== "tomorrow"} />

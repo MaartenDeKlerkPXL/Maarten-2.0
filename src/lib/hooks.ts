@@ -30,6 +30,9 @@ export function useMediaQuery(query: string): boolean {
 
 export function haptic(pattern: number | number[] = 12) {
   try {
+    // alleen na een echte aanraking (anders blokkeert de browser het met een waarschuwing)
+    const activation = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } }).userActivation;
+    if (activation && !activation.hasBeenActive) return;
     navigator.vibrate?.(pattern);
   } catch {
     /* niet ondersteund */

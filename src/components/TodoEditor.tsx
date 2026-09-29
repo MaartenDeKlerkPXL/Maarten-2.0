@@ -141,10 +141,10 @@ export function TodoEditor({ draft, onClose }: { draft: TodoDraft | null; onClos
             <input type="time" className="input" value={form.end_time?.slice(0, 5) ?? ""} onChange={(e) => set({ end_time: e.target.value || null })} />
           </Field>
         </div>
-        <Field label="Categorie">
+        <Field group label="Categorie">
           <CategoryPicker categories={categories} value={form.category_id ?? null} onChange={(id) => set({ category_id: id })} />
         </Field>
-        <Field label="Prioriteit">
+        <Field group label="Prioriteit">
           <Segmented
             options={[
               { value: "0", label: "Geen" },
@@ -157,7 +157,7 @@ export function TodoEditor({ draft, onClose }: { draft: TodoDraft | null; onClos
           />
         </Field>
         {form.due_date && (
-          <Field label="Melding vooraf" hint="Je krijgt 's ochtends een melding op deze dagen voor de datum.">
+          <Field group label="Melding vooraf" hint="Je krijgt 's ochtends een melding op deze dagen voor de datum.">
             <div className="flex flex-wrap gap-1.5">
               {REMIND_OPTIONS.map((o) => {
                 const active = (form.remind_days_before ?? []).includes(o.days);

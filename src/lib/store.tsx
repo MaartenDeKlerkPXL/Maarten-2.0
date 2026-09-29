@@ -42,6 +42,8 @@ export type NewTodo = Partial<Omit<Todo, "id">> & { title: string };
 function useDataStore() {
   const toast = useToast();
   const [state, setState] = useState<DataState>(EMPTY);
+  const stateRef = useRef(state);
+  stateRef.current = state;
   const lastLoad = useRef(0);
 
   const fail = useCallback((e: unknown) => {
@@ -171,6 +173,22 @@ function useDataStore() {
     return upsert("habitLogs", { id: crypto.randomUUID(), habit_id: habitId, log_date: date });
   }, [removeRow, state.habitLogs, upsert]);
 
+  const refreshHabitLogs = useCallback(async () => {
+    const { data } = await supabase.from("habit_logs").select("id, habit_id, log_date").gte("log_date", addIsoDays(todayIso(), -400)).limit(5000);
+    if (data) setState((s) => ({ ...s, habitLogs: data as HabitLog[] }));
+  }, []);
+
+  /** Idempotent afvinken (timer klaar, training gelogd): nooit dubbel, ook niet als de server het al deed. */
+  const setHabitDone = useCallback(async (habitId: string, date: string) => {
+    if (stateRef.current.habitLogs.some((l) => l.habit_id === habitId && l.log_date === date)) return;
+    const row = { id: crypto.randomUUID(), habit_id: habitId, log_date: date };
+    setList("habitLogs", (l) => [...l, row]);
+    const { error } = await supabase.from("habit_logs").upsert(row, { onConflict: "habit_id,log_date", ignoreDuplicates: true });
+    if (error) fail(error);
+    refreshHabitLogs();
+  }, [fail, setList, refreshHabitLogs]);
+
+
   const startTimer = useCallback((habit: Habit) => {
     const now = Date.now();
     return upsert("timers", {
@@ -263,7 +281,7 @@ function useDataStore() {
   return {
     ...state, refresh, reloadTodos,
     addTodo, updateTodo, toggleTodo, removeTodo,
-    toggleHabit, startTimer, stopTimer, saveHabit, deleteHabit,
+    toggleHabit, setHabitDone, startTimer, stopTimer, saveHabit, deleteHabit,
     addWater, removeWater, addPushups, removePushup,
     createWorkout, updateWorkout, deleteWorkout, saveSet, deleteSet, saveExercise,
     saveBirthday, deleteBirthday, saveSchedule, deleteSchedule, saveCategory,

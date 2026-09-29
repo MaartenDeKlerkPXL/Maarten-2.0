@@ -11,10 +11,10 @@ import type { Exercise, Workout, WorkoutSet } from "../lib/types";
 import { useToast } from "../components/Toast";
 
 function useSportHabit() {
-  const { habits, habitLogs, toggleHabit } = useData();
+  const { habits, setHabitDone } = useData();
   const habit = habits.find((h) => /sport/i.test(h.name));
   return (date: string) => {
-    if (habit && !habitLogs.some((l) => l.habit_id === habit.id && l.log_date === date)) toggleHabit(habit.id, date);
+    if (habit) setHabitDone(habit.id, date);
   };
 }
 

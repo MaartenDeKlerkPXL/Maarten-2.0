@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ComponentType } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ComponentType } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { CalendarDays, Home, ListTodo, Loader2, Menu, Plus, Target } from "lucide-react";
 import { supabase } from "./lib/supabase";
@@ -129,9 +129,17 @@ function QuickAddSheet({ open, onClose }: { open: boolean; onClose: () => void }
 
 function Shell() {
   const path = usePath();
-  const { loading } = useData();
+  const { loading, todos, syncEvents } = useData();
   const [adding, setAdding] = useState(false);
   const Page = ROUTES[path] ?? Today;
+
+  // Eerste keer: F1 en Roda JC meteen ophalen i.p.v. te wachten op de cron
+  const synced = useRef(false);
+  useEffect(() => {
+    if (loading || synced.current) return;
+    synced.current = true;
+    if (!todos.some((t) => t.source === "f1" || t.source === "roda")) syncEvents();
+  }, [loading, todos, syncEvents]);
 
   useEffect(() => {
     refreshPushSubscription();

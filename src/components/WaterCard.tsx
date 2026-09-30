@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CupSoda, Droplets, GlassWater, Milk, Plus, Undo2 } from "lucide-react";
+import { Coffee, CupSoda, Droplets, GlassWater, Milk, Plus, Undo2 } from "lucide-react";
 import { useData } from "../lib/store";
 import { useToday, haptic } from "../lib/hooks";
 import { addIsoDays, fmt } from "../lib/dates";
@@ -7,9 +7,10 @@ import { waterByDay, waterStreak } from "../lib/logic";
 import { useToast } from "./Toast";
 
 export const WATER_PRESETS = [
-  { ml: 250, label: "Glas", icon: GlassWater },
-  { ml: 350, label: "Groot glas", icon: CupSoda },
-  { ml: 500, label: "Flesje 0,5 L", icon: Milk },
+  { ml: 150, label: "Koffie", short: "Koffie", icon: Coffee },
+  { ml: 250, label: "Glas", short: "Glas", icon: GlassWater },
+  { ml: 350, label: "Groot glas", short: "Groot", icon: CupSoda },
+  { ml: 500, label: "Flesje 0,5 L", short: "Flesje", icon: Milk },
 ];
 
 function Wave({ pct }: { pct: number }) {
@@ -76,15 +77,16 @@ export function WaterCard({ compact = false }: { compact?: boolean }) {
         </div>
       </div>
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="mt-4 grid grid-cols-4 gap-1.5">
         {WATER_PRESETS.map((p) => (
           <button
             key={p.ml}
             onClick={() => add(p.ml, p.label)}
+            title={`${p.label} · ${p.ml} ml`}
             className="group flex min-w-0 flex-col items-center gap-1 rounded-2xl border border-sky-400/15 bg-sky-400/[0.06] px-1 py-2.5 transition hover:bg-sky-400/10 active:scale-95"
           >
             <p.icon className="size-5 text-sky-300 transition group-active:scale-110" />
-            <span className="w-full truncate text-center text-[11px] font-medium text-muted">{p.label}</span>
+            <span className="w-full truncate text-center text-[11px] font-medium text-muted">{p.short}</span>
             <span className="whitespace-nowrap text-xs font-semibold tabular text-text">+{p.ml}</span>
           </button>
         ))}

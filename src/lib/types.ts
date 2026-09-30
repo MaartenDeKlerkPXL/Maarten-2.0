@@ -159,3 +159,19 @@ export interface PushupLog {
   reps: number;
   created_at: string;
 }
+
+export interface Inspiration {
+  id: string;
+  sotd_date: string;
+  name: string;
+  url: string | null;
+  awwwards_url: string | null;
+  image_url: string | null;
+  description: string | null;
+  categories: string[];
+  tags: string[];
+  technologies: string[];
+  status: "pending" | "saved" | "skipped";
+  note: string | null;
+  decided_at: string | null;
+}

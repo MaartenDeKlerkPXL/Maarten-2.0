@@ -23,6 +23,7 @@ const Schedule = lazy(() => import("./pages/more/Schedule"));
 const Recurring = lazy(() => import("./pages/more/Recurring"));
 const Archive = lazy(() => import("./pages/more/Archive"));
 const Settings = lazy(() => import("./pages/more/Settings"));
+const Inspiration = lazy(() => import("./pages/more/Inspiration"));
 
 const ROUTES: Record<string, ComponentType> = {
   "/": Today,
@@ -36,6 +37,7 @@ const ROUTES: Record<string, ComponentType> = {
   "/meer/terugkerend": Recurring,
   "/meer/archief": Archive,
   "/meer/instellingen": Settings,
+  "/meer/inspiratie": Inspiration,
 };
 
 const NAV = [
@@ -133,7 +135,7 @@ function QuickAddSheet({ open, onClose }: { open: boolean; onClose: () => void }
 
 function Shell() {
   const path = usePath();
-  const { loading, todos, syncEvents } = useData();
+  const { loading, todos, syncEvents, inspiration, syncAwwwards } = useData();
   const [adding, setAdding] = useState(false);
   const workoutId = path.startsWith("/fitness/training/") ? path.slice("/fitness/training/".length) : null;
   const Page = ROUTES[path] ?? Today;
@@ -144,7 +146,10 @@ function Shell() {
     if (loading || synced.current) return;
     synced.current = true;
     if (!todos.some((t) => t.source === "f1" || t.source === "roda")) syncEvents();
-  }, [loading, todos, syncEvents]);
+    // Site of the Day van vandaag (Awwwards publiceert rond middernacht UTC) nog niet binnen? Ophalen.
+    const utcToday = new Date().toISOString().slice(0, 10);
+    if (!inspiration[0] || inspiration[0].sotd_date < utcToday) syncAwwwards();
+  }, [loading, todos, syncEvents, inspiration, syncAwwwards]);
 
   useEffect(() => {
     refreshPushSubscription();

@@ -3,8 +3,8 @@ import { supabase } from "./supabase";
 import { addIsoDays, todayIso } from "./dates";
 import { useToast } from "../components/Toast";
 import type {
-  Birthday, Category, Exercise, Habit, HabitLog, HabitTimer, PushupLog, RecurringTodo, ScheduleItem, Settings, Todo,
-  WaterLog, Workout, WorkoutSet,
+  Birthday, Category, Exercise, Habit, HabitLog, HabitTimer, Inspiration, PushupLog, RecurringTodo, ScheduleItem, Settings,
+  Todo, WaterLog, Workout, WorkoutSet,
 } from "./types";
 
 interface DataState {
@@ -23,18 +23,19 @@ interface DataState {
   workouts: Workout[];
   sets: WorkoutSet[];
   pushups: PushupLog[];
+  inspiration: Inspiration[];
 }
 
 const EMPTY: DataState = {
   loading: true, settings: null, categories: [], todos: [], schedule: [], habits: [], habitLogs: [],
-  timers: [], birthdays: [], water: [], recurring: [], exercises: [], workouts: [], sets: [], pushups: [],
+  timers: [], birthdays: [], water: [], recurring: [], exercises: [], workouts: [], sets: [], pushups: [], inspiration: [],
 };
 
 type ListKey = Exclude<keyof DataState, "loading" | "settings">;
 const TABLES: Record<ListKey, string> = {
   categories: "categories", todos: "todos", schedule: "schedule_items", habits: "habits", habitLogs: "habit_logs",
   timers: "habit_timers", birthdays: "birthdays", water: "water_logs", recurring: "recurring_todos",
-  exercises: "exercises", workouts: "workouts", sets: "workout_sets", pushups: "pushup_logs",
+  exercises: "exercises", workouts: "workouts", sets: "workout_sets", pushups: "pushup_logs", inspiration: "inspiration",
 };
 
 export type NewTodo = Partial<Omit<Todo, "id">> & { title: string };
@@ -60,7 +61,7 @@ function useDataStore() {
         return r.data as T;
       });
     try {
-      const [settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring, exercises, workouts, sets, pushups] = await Promise.all([
+      const [settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring, exercises, workouts, sets, pushups, inspiration] = await Promise.all([
         q<Settings>(supabase.from("settings").select("*").maybeSingle()),
         q<Category[]>(supabase.from("categories").select("*").order("sort")),
         q<Todo[]>(supabase.from("todos").select("*").is("archived_at", null).order("due_date", { nullsFirst: false }).limit(2000)),
@@ -75,8 +76,9 @@ function useDataStore() {
         q<Workout[]>(supabase.from("workouts").select("*").gte("workout_date", since).order("workout_date").limit(2000)),
         q<WorkoutSet[]>(supabase.from("workout_sets").select("*").gte("created_at", `${since}T00:00:00Z`).order("created_at").limit(20000)),
         q<PushupLog[]>(supabase.from("pushup_logs").select("*").gte("log_date", since).order("created_at").limit(10000)),
+        q<Inspiration[]>(supabase.from("inspiration").select("*").order("sotd_date", { ascending: false }).limit(2000)),
       ]);
-      setState({ loading: false, settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring, exercises, workouts, sets, pushups });
+      setState({ loading: false, settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring, exercises, workouts, sets, pushups, inspiration });
     } catch (e) {
       setState((s) => ({ ...s, loading: false }));
       fail(e);
@@ -267,6 +269,18 @@ function useDataStore() {
     if (error) fail(error);
   }, [fail, state.settings?.user_id]);
 
+  // ── Awwwards Site of the Day
+  const decideInspiration = useCallback((id: string, status: Inspiration["status"]) =>
+    patchRow("inspiration", id, { status, decided_at: status === "pending" ? null : new Date().toISOString() }), [patchRow]);
+  const updateInspiration = useCallback((id: string, patch: Partial<Inspiration>) => patchRow("inspiration", id, patch), [patchRow]);
+  const syncAwwwards = useCallback(async () => {
+    const { error } = await supabase.functions.invoke("sync-awwwards", { body: {} });
+    if (error) return false;
+    const { data } = await supabase.from("inspiration").select("*").order("sotd_date", { ascending: false }).limit(2000);
+    if (data) setState((s) => ({ ...s, inspiration: data as Inspiration[] }));
+    return true;
+  }, []);
+
   // ── Sync F1 / Roda
   const syncEvents = useCallback(async () => {
     const { data, error } = await supabase.functions.invoke("sync-events", { body: {} });
@@ -286,7 +300,7 @@ function useDataStore() {
     createWorkout, updateWorkout, deleteWorkout, saveSet, deleteSet, saveExercise,
     saveBirthday, deleteBirthday, saveSchedule, deleteSchedule, saveCategory,
     saveRecurring, deleteRecurring,
-    updateSettings, syncEvents,
+    updateSettings, syncEvents, decideInspiration, updateInspiration, syncAwwwards,
   };
 }
 

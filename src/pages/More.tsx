@@ -1,10 +1,11 @@
-import { Archive, Bell, Cake, CalendarRange, ChevronRight, Repeat, Settings as SettingsIcon, Smartphone, Target } from "lucide-react";
+import { Archive, Bell, Cake, CalendarRange, ChevronRight, Repeat, Settings as SettingsIcon, Smartphone, Sparkles, Target } from "lucide-react";
 import { navigate } from "../lib/router";
 import { PageHeader } from "../components/ui";
 import { isIos, isStandalone } from "../lib/push";
 
 const ITEMS = [
   { path: "/doelen", icon: Target, label: "Doelen & statistieken", sub: "Streaks en heatmaps van je gewoontes", color: "#A855F7" },
+  { path: "/meer/inspiratie", icon: Sparkles, label: "Inspiratie", sub: "Awwwards Sites of the Day · .md export", color: "#F59E0B" },
   { path: "/meer/verjaardagen", icon: Cake, label: "Verjaardagen", sub: "Toevoegen en aanpassen", color: "#EC4899" },
   { path: "/meer/rooster", icon: CalendarRange, label: "Vast rooster", sub: "School, klussen en andere vaste blokken", color: "#A1A1AA" },
   { path: "/meer/terugkerend", icon: Repeat, label: "Terugkerende taken", sub: "Maandelijks en wekelijks", color: "#3B82F6" },

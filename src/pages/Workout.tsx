@@ -5,7 +5,7 @@ import { navigate } from "../lib/router";
 import { fmt, todayIso } from "../lib/dates";
 import { haptic } from "../lib/hooks";
 import {
-  describeSession, fmtKg, isImprovement, metricOf, parseNum, sessionsFor, suggestNext, type Session,
+  DEFAULT_REPS, describeSession, fmtKg, isImprovement, metricOf, parseNum, sessionsFor, stepWeight, suggestNext, type Session,
 } from "../lib/fitness";
 import type { Exercise, Workout, WorkoutSet } from "../lib/types";
 import { useToast } from "../components/Toast";
@@ -29,12 +29,16 @@ function useSaveSet(workout: Workout) {
 
 /** Getal-invoer met − / + knoppen (groot genoeg voor zweterige vingers). */
 function Stepper({
-  value, onChange, step, suffix, decimals = false, width = "w-12", full = false,
-}: { value: string; onChange: (v: string) => void; step: number; suffix?: string; decimals?: boolean; width?: string; full?: boolean }) {
+  value, onChange, step, suffix, decimals = false, width = "w-12", full = false, stepper,
+}: {
+  value: string; onChange: (v: string) => void; step: number; suffix?: string; decimals?: boolean; width?: string; full?: boolean;
+  /** eigen stapfunctie, bv. de gewichtsreeks van een machine */
+  stepper?: (current: number | null, dir: 1 | -1) => number;
+}) {
   const bump = (d: number) => {
     haptic(6);
-    const n = parseNum(value || "0") ?? 0;
-    const next = Math.max(0, Math.round((n + d) * 100) / 100);
+    const n = parseNum(value);
+    const next = stepper ? stepper(n, d > 0 ? 1 : -1) : Math.max(0, Math.round(((n ?? 0) + d) * 100) / 100);
     onChange(String(next).replace(".", ","));
   };
   return (
@@ -89,7 +93,11 @@ function SetRow({ ex, set, index, onSave, onDelete }: { ex: Exercise; set: Worko
       <span className="grid size-7 shrink-0 place-items-center rounded-full bg-surface-3 text-xs font-bold tabular text-muted">{index + 1}</span>
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
         {(ex.kind === "weight" || ex.kind === "assist") && (
-          <Stepper value={kg} step={inc} decimals suffix={ex.kind === "assist" ? "kg hulp" : "kg"} onChange={(v) => { setKg(v); schedule({ kg: v }); }} />
+          <Stepper
+            value={kg} step={inc} decimals suffix={ex.kind === "assist" ? "kg hulp" : "kg"}
+            stepper={ex.weight_steps?.length ? (cur, dir) => stepWeight(ex, cur, dir) : undefined}
+            onChange={(v) => { setKg(v); schedule({ kg: v }); }}
+          />
         )}
         {(ex.kind === "weight" || ex.kind === "assist" || ex.kind === "reps") && (
           <Stepper value={reps} step={1} suffix="reps" width="w-9" onChange={(v) => { setReps(v); schedule({ reps: v }); }} />
@@ -127,8 +135,8 @@ function ExerciseBlock({ ex, workout, history }: { ex: Exercise; workout: Workou
     save({
       exercise_id: ex.id,
       set_no: (prev?.set_no ?? 0) + 1,
-      weight_kg: prev?.weight_kg ?? suggestion?.weight ?? tmpl?.weight_kg ?? null,
-      reps: prev?.reps ?? suggestion?.reps ?? tmpl?.reps ?? null,
+      weight_kg: prev?.weight_kg ?? suggestion?.weight ?? tmpl?.weight_kg ?? ex.weight_steps?.[0] ?? null,
+      reps: ex.kind === "weight" || ex.kind === "assist" || ex.kind === "reps" ? DEFAULT_REPS : null,
       seconds: prev?.seconds ?? suggestion?.seconds ?? tmpl?.seconds ?? null,
       level: prev?.level ?? tmpl?.level ?? null,
     });

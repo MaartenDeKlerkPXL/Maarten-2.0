@@ -47,10 +47,26 @@ export function targetOn(plan: PushupPlan, date: string): number {
 }
 
 // ───────────── Krachttraining ─────────────
+/** "" → null (niet 0), "42,5" → 42.5 */
 export const parseNum = (v: string) => {
+  if (!v || !v.trim()) return null;
   const n = Number(v.replace(",", "."));
   return Number.isFinite(n) ? n : null;
 };
+
+export const DEFAULT_REPS = 8;
+
+/** Volgend/vorig gewicht: op de gewichtsreeks van de machine, anders ± increment. */
+export function stepWeight(ex: Exercise, current: number | null, dir: 1 | -1): number {
+  const steps = (ex.weight_steps ?? []).map(Number).sort((a, b) => a - b);
+  const w = current ?? 0;
+  if (steps.length) {
+    if (dir > 0) return steps.find((s) => s > w + 0.001) ?? steps[steps.length - 1];
+    return [...steps].reverse().find((s) => s < w - 0.001) ?? steps[0];
+  }
+  const inc = Number(ex.increment_kg) || 2.5;
+  return Math.max(0, Math.round((w + dir * inc) * 100) / 100);
+}
 
 export const fmtKg = (n: number | null | undefined) =>
   n == null ? "–" : `${Number(n).toLocaleString("nl-NL", { maximumFractionDigits: 1 })}`;
@@ -185,10 +201,13 @@ export function suggestNext(ex: Exercise, last: Session | undefined): Suggestion
   const anyLow = sets.some((s) => (s.reps ?? 0) < REP_LOW);
   const inc = Number(ex.increment_kg) || 2.5;
   switch (ex.kind) {
-    case "weight":
-      if (allHigh) return { text: `Zwaarder: ${fmtKg(topWeight + inc)} kg × ${REP_LOW}–${REP_HIGH}`, weight: topWeight + inc, reps: REP_LOW };
+    case "weight": {
+      const heavier = stepWeight(ex, topWeight, 1);
+      if (allHigh && heavier > topWeight) return { text: `Zwaarder: ${fmtKg(heavier)} kg × ${REP_LOW}–${REP_HIGH}`, weight: heavier, reps: REP_LOW };
+      if (allHigh) return { text: `${fmtKg(topWeight)} kg is het maximum: probeer meer herhalingen`, weight: topWeight, reps: REP_HIGH };
       if (anyLow) return { text: `Blijf op ${fmtKg(topWeight)} kg en haal ${REP_LOW}+ herhalingen`, weight: topWeight, reps: REP_LOW };
       return { text: `${fmtKg(topWeight)} kg: probeer +1 herhaling per set`, weight: topWeight, reps: Math.min(REP_HIGH, (last.best?.reps ?? REP_LOW) + 1) };
+    }
     case "assist":
       if (allHigh) return { text: `Minder hulp: ${fmtKg(Math.max(0, topWeight - inc))} kg × ${REP_LOW}–${REP_HIGH}`, weight: Math.max(0, topWeight - inc), reps: REP_LOW };
       return { text: `${fmtKg(topWeight)} kg hulp: probeer +1 herhaling per set`, weight: topWeight, reps: Math.min(REP_HIGH, (last.best?.reps ?? REP_LOW) + 1) };

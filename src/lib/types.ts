@@ -128,6 +128,8 @@ export interface Exercise {
   kind: ExerciseKind;
   grp: "warmup" | "kracht" | "core";
   increment_kg: number;
+  /** vaste gewichten op de machine (de +/- springt hiertussen); null = vrije stappen */
+  weight_steps: number[] | null;
   sort: number;
   active: boolean;
 }

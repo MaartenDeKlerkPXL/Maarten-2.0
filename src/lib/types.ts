@@ -172,6 +172,7 @@ export interface Inspiration {
   tags: string[];
   technologies: string[];
   status: "pending" | "saved" | "skipped";
+  rating: 1 | 2 | 3 | null;
   note: string | null;
   decided_at: string | null;
 }

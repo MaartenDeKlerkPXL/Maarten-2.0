@@ -1,10 +1,11 @@
 import { useMemo } from "react";
-import { ArrowRight, ExternalLink, RefreshCw, Save, ThumbsDown, Undo2 } from "lucide-react";
+import { ArrowRight, ExternalLink, RefreshCw, Undo2 } from "lucide-react";
 import { useData } from "../lib/store";
 import { navigate } from "../lib/router";
 import { fmt } from "../lib/dates";
 import { haptic } from "../lib/hooks";
-import { hashtagsOf } from "../lib/markdown";
+import { hashtagsOf, RATINGS } from "../lib/markdown";
+import { RatingButtons, RatingDots } from "./RatingButtons";
 import { useToast } from "./Toast";
 
 /** Dagelijkse Awwwards Site of the Day: bekijken → opslaan of "niet mooi". */
@@ -40,23 +41,24 @@ export function AwwwardsCard() {
           <h2 className="section-title">Site of the Day</h2>
           <p className="mt-0.5 truncate text-sm">
             <span className="font-semibold">{last.name}</span>
-            <span className="text-muted"> · {last.status === "saved" ? "opgeslagen ✓" : "overgeslagen"}</span>
+            <span className="text-muted"> · {last.status === "saved" ? "opgeslagen" : "overgeslagen"}</span>
           </p>
+          {last.status === "saved" && <RatingDots rating={last.rating} />}
         </div>
         <button onClick={() => decideInspiration(last.id, "pending")} className="chip hover:text-text" aria-label="Ongedaan maken">
           <Undo2 className="size-3" />
         </button>
         <button onClick={() => navigate("/meer/inspiratie")} className="chip whitespace-nowrap hover:text-text">
-          {savedCount} <ArrowRight className="size-3" />
+          Bord · {savedCount} <ArrowRight className="size-3" />
         </button>
       </div>
     );
   }
 
-  const decide = (status: "saved" | "skipped") => {
+  const decide = (status: "saved" | "skipped", rating: 1 | 2 | 3 | null = null) => {
     haptic(status === "saved" ? [10, 30, 10] : 8);
-    decideInspiration(current.id, status);
-    toast.show(status === "saved" ? `${current.name} opgeslagen in je inspiratie` : "Overgeslagen, niets opgeslagen", "info", {
+    decideInspiration(current.id, status, rating);
+    toast.show(status === "saved" && rating ? `${current.name}: ${rating}/3 · ${RATINGS[rating].short}` : "Overgeslagen, niets opgeslagen", "info", {
       label: "Ongedaan",
       run: () => decideInspiration(current.id, "pending"),
     });
@@ -89,13 +91,9 @@ export function AwwwardsCard() {
           ))}
         </div>
         {tags.length > 0 && <p className="mt-2 text-xs text-faint">{tags.join(" ")}</p>}
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <button onClick={() => decide("skipped")} className="btn btn-ghost whitespace-nowrap">
-            <ThumbsDown className="size-4" /> Niet mooi
-          </button>
-          <button onClick={() => decide("saved")} className="btn btn-primary whitespace-nowrap">
-            <Save className="size-4" /> Opslaan
-          </button>
+        <div className="mt-4">
+          <p className="mb-2 text-xs font-medium text-muted">Opslaan met cijfer</p>
+          <RatingButtons onRate={(r) => decide("saved", r)} onSkip={() => decide("skipped")} />
         </div>
         {olderPending > 0 && (
           <button onClick={() => navigate("/meer/inspiratie")} className="mt-3 w-full text-center text-xs font-medium text-accent-2">

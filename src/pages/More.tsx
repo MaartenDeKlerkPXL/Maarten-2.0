@@ -2,10 +2,11 @@ import { Archive, Bell, Cake, CalendarRange, ChevronRight, Repeat, Settings as S
 import { navigate } from "../lib/router";
 import { PageHeader } from "../components/ui";
 import { isIos, isStandalone } from "../lib/push";
+import { useMediaQuery } from "../lib/hooks";
 
 const ITEMS = [
   { path: "/doelen", icon: Target, label: "Doelen & statistieken", sub: "Streaks en heatmaps van je gewoontes", color: "#A855F7" },
-  { path: "/meer/inspiratie", icon: Sparkles, label: "Inspiratie", sub: "Awwwards Sites of the Day · .md export", color: "#F59E0B" },
+  { path: "/meer/inspiratie", icon: Sparkles, label: "Inspiratiebord", sub: "Awwwards Sites of the Day · filters · .md export", color: "#F59E0B", desktopOnly: true },
   { path: "/meer/verjaardagen", icon: Cake, label: "Verjaardagen", sub: "Toevoegen en aanpassen", color: "#EC4899" },
   { path: "/meer/rooster", icon: CalendarRange, label: "Vast rooster", sub: "School, klussen en andere vaste blokken", color: "#A1A1AA" },
   { path: "/meer/terugkerend", icon: Repeat, label: "Terugkerende taken", sub: "Maandelijks en wekelijks", color: "#3B82F6" },
@@ -15,6 +16,7 @@ const ITEMS = [
 
 export default function More() {
   const showInstall = isIos() && !isStandalone();
+  const desktop = useMediaQuery("(min-width: 1024px)");
   return (
     <div className="mx-auto max-w-2xl">
       <PageHeader title="Meer" />
@@ -32,7 +34,7 @@ export default function More() {
         </div>
       )}
       <div className="card divide-y divide-line overflow-hidden">
-        {ITEMS.map((i) => (
+        {ITEMS.filter((i) => desktop || !("desktopOnly" in i)).map((i) => (
           <button key={i.path} onClick={() => navigate(i.path)} className="flex w-full items-center gap-3.5 px-4 py-3.5 text-left transition hover:bg-white/[0.03]">
             <div className="grid size-10 place-items-center rounded-xl" style={{ background: `${i.color}1f`, color: i.color }}>
               <i.icon className="size-5" />

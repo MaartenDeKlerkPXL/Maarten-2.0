@@ -87,7 +87,6 @@ function DailyHabits() {
           <DailyHabitCard key={h.id} habit={h} />
         ))}
         <PushupCard />
-        <AwwwardsCard />
       </div>
     </section>
   );
@@ -181,6 +180,7 @@ export default function Today() {
           <div className="col-span-5 space-y-5">
             <TodayTodos today={today} />
             <TodayAgenda today={today} />
+            <AwwwardsCard />
           </div>
           <div className="col-span-3 space-y-5">
             <WaterCard />

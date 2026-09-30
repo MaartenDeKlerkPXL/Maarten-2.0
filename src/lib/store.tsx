@@ -270,8 +270,13 @@ function useDataStore() {
   }, [fail, state.settings?.user_id]);
 
   // ── Awwwards Site of the Day
-  const decideInspiration = useCallback((id: string, status: Inspiration["status"]) =>
-    patchRow("inspiration", id, { status, decided_at: status === "pending" ? null : new Date().toISOString() }), [patchRow]);
+  /** Opslaan mét cijfer (1–3), "niet mooi" (skipped) of terug naar "te beoordelen". */
+  const decideInspiration = useCallback((id: string, status: Inspiration["status"], rating: Inspiration["rating"] = null) =>
+    patchRow("inspiration", id, {
+      status,
+      rating: status === "saved" ? rating : null,
+      decided_at: status === "pending" ? null : new Date().toISOString(),
+    }), [patchRow]);
   const updateInspiration = useCallback((id: string, patch: Partial<Inspiration>) => patchRow("inspiration", id, patch), [patchRow]);
   const syncAwwwards = useCallback(async () => {
     const { error } = await supabase.functions.invoke("sync-awwwards", { body: {} });

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useRef, useState, type ComponentType } from "react";
 import type { Session } from "@supabase/supabase-js";
-import { CalendarDays, Dumbbell, Home, ListTodo, Loader2, Menu, Plus, Target } from "lucide-react";
+import { CalendarDays, Dumbbell, Home, ListTodo, Loader2, Menu, Plus, Sparkles, Target } from "lucide-react";
 import { supabase } from "./lib/supabase";
 import { DataProvider, useData } from "./lib/store";
 import { navigate, usePath } from "./lib/router";
@@ -46,10 +46,12 @@ const NAV = [
   { path: "/agenda", label: "Agenda", icon: CalendarDays },
   { path: "/fitness", label: "Fitness", icon: Dumbbell },
   { path: "/doelen", label: "Doelen", icon: Target, desktopOnly: true },
+  { path: "/meer/inspiratie", label: "Inspiratie", icon: Sparkles, desktopOnly: true },
   { path: "/meer", label: "Meer", icon: Menu },
 ];
 
-const isActive = (path: string, current: string) => (path === "/" ? current === "/" : current.startsWith(path));
+const isActive = (path: string, current: string) =>
+  path === "/" ? current === "/" : path === "/meer" ? current.startsWith("/meer") && current !== "/meer/inspiratie" : current.startsWith(path);
 
 function Spinner() {
   return (

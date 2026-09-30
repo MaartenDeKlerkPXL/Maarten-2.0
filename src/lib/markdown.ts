@@ -1,24 +1,31 @@
 import { fmt } from "./dates";
 import type { Inspiration } from "./types";
 
+export const RATINGS = {
+  1: { short: "Bruikbaar", long: "Wellicht bruikbaar" },
+  2: { short: "Mooi", long: "Mooi, waarschijnlijk bruikbaar" },
+  3: { short: "Wauw", long: "Wauw, super mooi en zeker bruikbaar" },
+} as const;
+
 export const hashtag = (t: string) => `#${t.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]/g, "")}`;
 
 export function hashtagsOf(i: Inspiration): string[] {
   return [...new Set([...i.tags, ...i.technologies].map(hashtag).filter((h) => h.length > 1))];
 }
 
-/** Alle opgeslagen sites als Markdown (nieuwste eerst). "Niet mooi" komt er nooit in. */
-export function inspirationMarkdown(items: Inspiration[]): string {
+/** Opgeslagen sites als Markdown (nieuwste eerst). "Niet mooi" komt er nooit in. */
+export function inspirationMarkdown(items: Inspiration[], subtitle?: string): string {
   const saved = items.filter((i) => i.status === "saved").sort((a, b) => b.sotd_date.localeCompare(a.sotd_date));
   const lines = [
     "# Awwwards inspiratie",
     "",
-    `_Opgeslagen Sites of the Day · ${saved.length} ${saved.length === 1 ? "site" : "sites"} · bijgewerkt ${fmt(new Date(), "d MMMM yyyy")}_`,
+    `_Opgeslagen Sites of the Day · ${saved.length} ${saved.length === 1 ? "site" : "sites"}${subtitle ? ` · ${subtitle}` : ""} · bijgewerkt ${fmt(new Date(), "d MMMM yyyy")}_`,
     "",
   ];
   for (const i of saved) {
     lines.push(`## ${i.name}`, "");
     lines.push(`- **Datum:** ${fmt(i.sotd_date, "d MMMM yyyy")}`);
+    if (i.rating) lines.push(`- **Cijfer:** ${i.rating}/3 · ${RATINGS[i.rating].long}`);
     if (i.url) lines.push(`- **Link:** ${i.url}`);
     if (i.awwwards_url) lines.push(`- **Awwwards:** ${i.awwwards_url}`);
     if (i.description) lines.push(`- **Onderwerp:** ${i.description}`);

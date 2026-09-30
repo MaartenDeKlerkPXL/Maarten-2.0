@@ -142,14 +142,8 @@ export function WeeklyGoalCard({ habit }: { habit: Habit }) {
             {streak > 1 && <span className="ml-2 text-orange-300">🔥 {streak} weken</span>}
           </p>
         </div>
-        {STATUS_TEXT[status] && (
-          <span
-            className="hidden rounded-full px-2.5 py-1 text-[11px] font-semibold sm:inline-block"
-            style={{
-              background: status === "planned" || status === "backup" ? `${habit.color}22` : "rgb(52 211 153 / 0.12)",
-              color: status === "planned" || status === "backup" ? habit.color : "#6EE7B7",
-            }}
-          >
+        {(status === "done-today" || status === "goal-met") && (
+          <span className="shrink-0 rounded-full bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-300">
             {STATUS_TEXT[status]}
           </span>
         )}

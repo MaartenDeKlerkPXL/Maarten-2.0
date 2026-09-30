@@ -72,6 +72,7 @@ export interface Habit {
   planned_days: number[];
   backup_days: number[];
   timer_minutes: number | null;
+  url: string | null;
   sort: number;
   active: boolean;
 }

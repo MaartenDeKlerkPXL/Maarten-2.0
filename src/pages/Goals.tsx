@@ -121,7 +121,7 @@ const COLORS = ["#3B82F6", "#22C55E", "#F59E0B", "#EF4444", "#A855F7", "#EC4899"
 function HabitEditor({ habit, onClose }: { habit: Partial<Habit>; onClose: () => void }) {
   const { saveHabit, deleteHabit, habits } = useData();
   const [f, setF] = useState<Partial<Habit>>({
-    emoji: "✅", color: "#3B82F6", frequency: "daily", target_per_week: 7, planned_days: [], backup_days: [], timer_minutes: null, active: true, ...habit,
+    emoji: "✅", color: "#3B82F6", frequency: "daily", target_per_week: 7, planned_days: [], backup_days: [], timer_minutes: null, url: null, active: true, ...habit,
   });
   const set = (p: Partial<Habit>) => setF((x) => ({ ...x, ...p }));
   const save = async () => {
@@ -129,6 +129,7 @@ function HabitEditor({ habit, onClose }: { habit: Partial<Habit>; onClose: () =>
     await saveHabit({
       ...f,
       name: f.name.trim(),
+      url: f.url?.trim() ? (/^https?:\/\//i.test(f.url.trim()) ? f.url.trim() : `https://${f.url.trim()}`) : null,
       target_per_week: f.frequency === "daily" ? 7 : f.target_per_week ?? 1,
       sort: f.sort ?? habits.length + 1,
     } as Habit);
@@ -190,6 +191,9 @@ function HabitEditor({ habit, onClose }: { habit: Partial<Habit>; onClose: () =>
             <input type="number" min={1} max={240} className="input" value={f.timer_minutes} onChange={(e) => set({ timer_minutes: Math.max(1, Number(e.target.value)) })} />
           </Field>
         )}
+        <Field label="Link" hint="Snelknop op de kaart, bv. naar je leeromgeving.">
+          <input type="url" inputMode="url" className="input" placeholder="https://…" value={f.url ?? ""} onChange={(e) => set({ url: e.target.value })} />
+        </Field>
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm font-medium">Actief</p>
           <Toggle checked={!!f.active} onChange={(v) => set({ active: v })} />

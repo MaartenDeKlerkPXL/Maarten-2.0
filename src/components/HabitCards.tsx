@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import { Flame, Pause, Play, Timer } from "lucide-react";
+import { ExternalLink, Flame, Pause, Play, Timer } from "lucide-react";
 import type { Habit } from "../lib/types";
 import { useData } from "../lib/store";
 import { useNow, useToday, haptic } from "../lib/hooks";
@@ -7,6 +7,24 @@ import { DOW_SHORT, parseIso, isoDow } from "../lib/dates";
 import { dailyStreak, logSet, weekCount, weekDates, weeklyStatus, weeklyStreak } from "../lib/logic";
 import { CheckCircle, Ring } from "./ui";
 import { useToast } from "./Toast";
+
+/** Snelknop naar de link van een gewoonte (bv. leeromgeving). */
+function HabitLink({ habit }: { habit: Habit }) {
+  if (!habit.url) return null;
+  return (
+    <a
+      href={habit.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="grid size-10 shrink-0 place-items-center rounded-full border transition active:scale-90"
+      style={{ borderColor: `${habit.color}66`, color: habit.color }}
+      aria-label={`${habit.name} openen`}
+      title={habit.url.replace(/^https?:\/\//, "")}
+    >
+      <ExternalLink className="size-4" />
+    </a>
+  );
+}
 
 function useDone(habitId: string) {
   const { habitLogs } = useData();
@@ -82,6 +100,7 @@ export function DailyHabitCard({ habit }: { habit: Habit }) {
           )}
         </p>
       </div>
+      <HabitLink habit={habit} />
       {habit.timer_minutes && !isDone && (
         <button
           onClick={() => {
@@ -142,6 +161,7 @@ export function WeeklyGoalCard({ habit }: { habit: Habit }) {
             {streak > 1 && <span className="ml-2 text-orange-300">🔥 {streak} weken</span>}
           </p>
         </div>
+        <HabitLink habit={habit} />
         {(status === "done-today" || status === "goal-met") && (
           <span className="shrink-0 rounded-full bg-emerald-400/10 px-2.5 py-1 text-[11px] font-semibold text-emerald-300">
             {STATUS_TEXT[status]}

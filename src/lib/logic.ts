@@ -1,5 +1,5 @@
 import { addIsoDays, daysBetween, iso, isoDow, nextBirthday, parseIso, todayIso, weekStart } from "./dates";
-import { holidayLabel, holidaysOn, isBelgianHoliday } from "./holidays";
+import { holidayLabel, holidaysOn, isPxlFreeDay, schoolBreakLabel, schoolBreaksOn } from "./holidays";
 import type { Birthday, Category, Habit, HabitLog, ScheduleItem, Todo, WaterLog } from "./types";
 
 // ───────────── Gewoontes ─────────────
@@ -126,11 +126,14 @@ export function agendaFor(
   const color = (id: string | null) => (id && cats.get(id)?.color) || "#64748B";
   const schoolId = data.categories.find((c) => c.slug === "school")?.id;
   const dow = isoDow(parseIso(date));
-  const beHoliday = isBelgianHoliday(date);
+  const noSchool = isPxlFreeDay(date);
   const items: AgendaItem[] = [];
 
   for (const h of holidaysOn(date)) {
     items.push({ key: `h-${h.name}`, kind: "holiday", title: holidayLabel(h), start: null, end: null, color: "#F59E0B" });
+  }
+  for (const b of schoolBreaksOn(date)) {
+    items.push({ key: `v-${b.region}-${b.start}`, kind: "holiday", title: schoolBreakLabel(b), start: null, end: null, color: "#2DD4BF" });
   }
   for (const b of data.birthdays) {
     const next = nextBirthday(b.day, b.month, parseIso(date));
@@ -146,7 +149,7 @@ export function agendaFor(
     if (s.weekday !== dow) continue;
     if (s.valid_from && date < s.valid_from) continue;
     if (s.valid_until && date > s.valid_until) continue;
-    if (beHoliday && s.category_id === schoolId) continue; // geen les op Belgische feestdagen
+    if (noSchool && s.category_id === schoolId) continue; // geen les op feestdagen en in vakanties
     items.push({
       key: `s-${s.id}`, kind: "class", title: s.title, subtitle: s.location, start: s.start_time.slice(0, 5),
       end: s.end_time.slice(0, 5), color: color(s.category_id), schedule: s,

@@ -1,10 +1,10 @@
 import { useMemo, type ReactNode } from "react";
-import { Cake, Flag, PartyPopper, Trophy } from "lucide-react";
+import { Cake, Flag, PartyPopper, Palmtree, Trophy } from "lucide-react";
 import { useData } from "../lib/store";
 import { useToday } from "../lib/hooks";
 import { addIsoDays, daysBetween, fmt, hm, relativeDay } from "../lib/dates";
 import { upcomingBirthdays } from "../lib/logic";
-import { holidayLabel, upcomingHolidays } from "../lib/holidays";
+import { holidayLabel, schoolBreakLabel, upcomingHolidays, upcomingSchoolBreaks } from "../lib/holidays";
 import { navigate } from "../lib/router";
 import type { Todo } from "../lib/types";
 
@@ -62,6 +62,11 @@ export function UpcomingCard({ onOpenTodo }: { onOpenTodo: (t: Todo) => void }) 
     if (f1) out.push({ key: f1.id, date: f1.due_date!, title: f1.title, sub: `${relativeDay(f1.due_date!)}${f1.due_time ? ` · ${hm(f1.due_time)}` : ""}`, icon: <Flag className="size-4" />, color: "#EF4444", todo: f1 });
     for (const h of upcomingHolidays(today, 45)) {
       out.push({ key: `h${h.date}${h.name}`, date: h.date, title: holidayLabel(h), sub: `${relativeDay(h.date)} · ${inDays(daysBetween(today, h.date))}`, icon: <PartyPopper className="size-4" />, color: "#F59E0B" });
+    }
+    for (const v of upcomingSchoolBreaks(today, 45)) {
+      const range = v.start === v.end ? fmt(v.start, "EEE d MMM") : `${fmt(v.start, "d MMM")} – ${fmt(v.end, "d MMM")}`;
+      const when = v.start <= today ? `nog t/m ${fmt(v.end, "d MMM")}` : inDays(daysBetween(today, v.start));
+      out.push({ key: `v${v.region}${v.start}`, date: v.start < today ? today : v.start, title: schoolBreakLabel(v), sub: v.start <= today ? when : `${range} · ${when}`, icon: <Palmtree className="size-4" />, color: "#2DD4BF" });
     }
     for (const b of upcomingBirthdays(birthdays, today).filter((b) => b.days <= 60)) {
       out.push({ key: `b${b.birthday.id}`, date: b.date, title: b.birthday.is_self ? "Jouw verjaardag" : `${b.birthday.name} jarig`, sub: `${fmt(b.date, "d MMM")} · ${inDays(b.days)}`, icon: <Cake className="size-4" />, color: "#EC4899" });

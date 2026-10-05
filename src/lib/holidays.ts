@@ -75,3 +75,50 @@ export function upcomingHolidays(from: string, days: number): Holiday[] {
   const end = addIsoDays(from, days);
   return [...holidaysForYear(y), ...holidaysForYear(y + 1)].filter((h) => h.date >= from && h.date <= end);
 }
+
+// ───────────── Schoolvakanties ─────────────
+// NL = regio Zuid (Limburg), BE = Vlaanderen (ook Limburg). PXL volgt de Vlaamse vakanties;
+// op die dagen en op PXL-sluitingsdagen vallen de lessen weg.
+export type BreakRegion = Country | "PXL";
+export interface SchoolBreak {
+  start: string;
+  end: string; // t/m
+  name: string;
+  region: BreakRegion;
+}
+
+export const SCHOOL_BREAKS: SchoolBreak[] = [
+  { start: "2026-10-17", end: "2026-10-25", name: "Herfstvakantie", region: "NL" },
+  { start: "2026-11-02", end: "2026-11-08", name: "Herfstvakantie", region: "BE" },
+  { start: "2026-12-18", end: "2026-12-18", name: "Brugdag, PXL gesloten", region: "PXL" },
+  { start: "2026-12-19", end: "2027-01-03", name: "Kerstvakantie", region: "NL" },
+  { start: "2026-12-21", end: "2027-01-03", name: "Kerstvakantie", region: "BE" },
+  { start: "2027-02-08", end: "2027-02-14", name: "Krokusvakantie", region: "BE" },
+  { start: "2027-02-13", end: "2027-02-21", name: "Voorjaarsvakantie", region: "NL" },
+  { start: "2027-03-29", end: "2027-04-11", name: "Paasvakantie", region: "BE" },
+  { start: "2027-04-24", end: "2027-05-02", name: "Meivakantie", region: "NL" },
+  { start: "2027-05-07", end: "2027-05-07", name: "Brugdag, PXL gesloten", region: "PXL" },
+  { start: "2027-07-01", end: "2027-08-31", name: "Zomervakantie", region: "BE" },
+  { start: "2027-07-24", end: "2027-09-05", name: "Zomervakantie", region: "NL" },
+  { start: "2027-11-01", end: "2027-11-07", name: "Herfstvakantie", region: "BE" },
+  { start: "2027-12-27", end: "2028-01-09", name: "Kerstvakantie", region: "BE" },
+];
+
+export function schoolBreaksOn(date: string): SchoolBreak[] {
+  return SCHOOL_BREAKS.filter((b) => b.start <= date && date <= b.end);
+}
+
+export function schoolBreakLabel(b: SchoolBreak): string {
+  return `${b.name} (${b.region})`;
+}
+
+/** Geen les bij PXL: Belgische feestdag, Vlaamse schoolvakantie of PXL-sluitingsdag. */
+export function isPxlFreeDay(date: string): boolean {
+  return isBelgianHoliday(date) || schoolBreaksOn(date).some((b) => b.region !== "NL");
+}
+
+/** Vakanties die binnen `days` dagen beginnen (of nu bezig zijn). */
+export function upcomingSchoolBreaks(from: string, days: number): SchoolBreak[] {
+  const end = addIsoDays(from, days);
+  return SCHOOL_BREAKS.filter((b) => b.end >= from && b.start <= end);
+}

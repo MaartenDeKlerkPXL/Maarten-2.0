@@ -1,5 +1,5 @@
 import { addIsoDays, daysBetween, iso, isoDow, nextBirthday, parseIso, todayIso, weekStart } from "./dates";
-import { holidayLabel, holidaysOn, isPxlFreeDay, schoolBreakLabel, schoolBreaksOn } from "./holidays";
+import { holidayLabel, holidaysOn, isBelgianSchoolFree, isPxlFreeDay, schoolBreakLabel, schoolBreaksOn } from "./holidays";
 import type { Birthday, Category, Habit, HabitLog, ScheduleItem, Todo, WaterLog } from "./types";
 
 // ───────────── Gewoontes ─────────────
@@ -125,8 +125,12 @@ export function agendaFor(
   const cats = new Map(data.categories.map((c) => [c.id, c]));
   const color = (id: string | null) => (id && cats.get(id)?.color) || "#64748B";
   const schoolId = data.categories.find((c) => c.slug === "school")?.id;
+  const stageId = data.categories.find((c) => c.slug === "stage")?.id;
   const dow = isoDow(parseIso(date));
   const noSchool = isPxlFreeDay(date);
+  const noStage = isBelgianSchoolFree(date);
+  // Een school-/stage-afspraak die een vast blok van dezelfde categorie overlapt vervangt dat blok (bv. een langere stagedag)
+  const overrides = data.todos.filter((t) => t.is_event && t.due_date === date && t.due_time && t.category_id && (t.category_id === schoolId || t.category_id === stageId));
   const items: AgendaItem[] = [];
 
   for (const h of holidaysOn(date)) {
@@ -150,6 +154,8 @@ export function agendaFor(
     if (s.valid_from && date < s.valid_from) continue;
     if (s.valid_until && date > s.valid_until) continue;
     if (noSchool && s.category_id === schoolId) continue; // geen les op feestdagen en in vakanties
+    if (noStage && s.category_id === stageId) continue; // stage volgt de Vlaamse vakanties
+    if (overrides.some((t) => t.category_id === s.category_id && t.due_time! < s.end_time && (t.end_time ? t.end_time > s.start_time : t.due_time! >= s.start_time))) continue;
     items.push({
       key: `s-${s.id}`, kind: "class", title: s.title, subtitle: s.location, start: s.start_time.slice(0, 5),
       end: s.end_time.slice(0, 5), color: color(s.category_id), schedule: s,

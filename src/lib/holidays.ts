@@ -112,9 +112,14 @@ export function schoolBreakLabel(b: SchoolBreak): string {
   return `${b.name} (${b.region})`;
 }
 
+/** Belgische feestdag of Vlaamse schoolvakantie: ook geen stage (werkplekleren). */
+export function isBelgianSchoolFree(date: string): boolean {
+  return isBelgianHoliday(date) || schoolBreaksOn(date).some((b) => b.region === "BE");
+}
+
 /** Geen les bij PXL: Belgische feestdag, Vlaamse schoolvakantie of PXL-sluitingsdag. */
 export function isPxlFreeDay(date: string): boolean {
-  return isBelgianHoliday(date) || schoolBreaksOn(date).some((b) => b.region !== "NL");
+  return isBelgianSchoolFree(date) || schoolBreaksOn(date).some((b) => b.region === "PXL");
 }
 
 /** Vakanties die binnen `days` dagen beginnen (of nu bezig zijn). */

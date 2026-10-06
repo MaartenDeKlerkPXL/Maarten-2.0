@@ -16,6 +16,7 @@ import { TodoRow } from "../components/TodoRow";
 import { useEditor } from "../components/EditorContext";
 import { Ring, SectionHeader } from "../components/ui";
 import { LogoMark } from "../components/Logo";
+import { CountdownStrip } from "../components/Countdowns";
 
 function useDayScore(today: string) {
   const { habits, habitLogs, water, settings, todos } = useData();
@@ -172,6 +173,7 @@ export default function Today() {
       <div className="space-y-6">
         <Header today={today} />
         <BirthdayAlerts />
+        <CountdownStrip />
         <div className="grid grid-cols-12 gap-5">
           <div className="col-span-4 space-y-6">
             <DailyHabits />
@@ -195,6 +197,7 @@ export default function Today() {
     <div className="space-y-5">
       <Header today={today} />
       <BirthdayAlerts />
+      <CountdownStrip />
       <DailyHabits />
       <WaterCard />
       <TodayAgenda today={today} />

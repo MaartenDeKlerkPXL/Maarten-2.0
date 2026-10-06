@@ -224,3 +224,13 @@ export interface ProjectProgress {
   afgerond: number;
   totaal: number;
 }
+
+export interface Countdown {
+  id: string;
+  titel: string;
+  emoji: string;
+  datum: string;
+  /** "tot": aftellen op de voorpagina · "sinds": optellen op Doelen */
+  soort: "tot" | "sinds";
+  created_at: string;
+}

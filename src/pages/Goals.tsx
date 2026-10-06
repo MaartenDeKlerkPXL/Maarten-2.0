@@ -7,6 +7,8 @@ import { bestDailyStreak, dailyStreak, logSet, waterByDay, waterStreak, weekCoun
 import type { Habit } from "../lib/types";
 import { Field, PageHeader, Segmented, Toggle, WeekdayPicker } from "../components/ui";
 import { Sheet } from "../components/Sheet";
+import { CountdownEditor, SinceCard } from "../components/Countdowns";
+import type { Countdown } from "../lib/types";
 
 const WEEKS = 16;
 
@@ -204,26 +206,37 @@ function HabitEditor({ habit, onClose }: { habit: Partial<Habit>; onClose: () =>
 }
 
 export default function Goals() {
-  const { habits } = useData();
+  const { habits, countdowns } = useData();
   const [editing, setEditing] = useState<Partial<Habit> | null>(null);
+  const [counter, setCounter] = useState<Partial<Countdown> | null>(null);
+  const since = countdowns.filter((c) => c.soort === "sinds").sort((a, b) => a.datum.localeCompare(b.datum));
   return (
     <div>
       <PageHeader
         title="Doelen"
         subtitle="Je voortgang van de afgelopen 16 weken"
         action={
-          <button onClick={() => setEditing({})} className="btn btn-primary px-3 py-2 text-xs">
-            <Plus className="size-4" /> Gewoonte
-          </button>
+          <div className="flex gap-1.5">
+            <button onClick={() => setCounter({ soort: "sinds" })} className="btn btn-ghost px-3 py-2 text-xs">
+              <Plus className="size-4" /> Teller
+            </button>
+            <button onClick={() => setEditing({})} className="btn btn-primary px-3 py-2 text-xs">
+              <Plus className="size-4" /> Gewoonte
+            </button>
+          </div>
         }
       />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {since.map((c) => (
+          <SinceCard key={c.id} item={c} onEdit={() => setCounter(c)} />
+        ))}
         {habits.map((h) => (
           <HabitStats key={h.id} habit={h} onEdit={() => setEditing(h)} />
         ))}
         <WaterStats />
       </div>
       {editing && <HabitEditor habit={editing} onClose={() => setEditing(null)} />}
+      {counter && <CountdownEditor value={counter} onClose={() => setCounter(null)} />}
     </div>
   );
 }

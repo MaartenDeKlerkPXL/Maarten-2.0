@@ -3,7 +3,7 @@ import { supabase } from "./supabase";
 import { addIsoDays, todayIso } from "./dates";
 import { useToast } from "../components/Toast";
 import type {
-  Birthday, Category, Exercise, Habit, HabitLog, HabitTimer, Inspiration, ProjectProgress, ProjectSource, ProjectTask, PushupLog,
+  Birthday, Category, Countdown, Exercise, Habit, HabitLog, HabitTimer, Inspiration, ProjectProgress, ProjectSource, ProjectTask, PushupLog,
   RecurringTodo, ScheduleItem, Settings, Todo, WaterLog, Workout, WorkoutSet,
 } from "./types";
 import { parseTaskText } from "../../supabase/functions/_shared/todoMarkdown.ts";
@@ -28,12 +28,13 @@ interface DataState {
   projects: ProjectSource[];
   projectTasks: ProjectTask[];
   projectProgress: ProjectProgress[];
+  countdowns: Countdown[];
 }
 
 const EMPTY: DataState = {
   loading: true, settings: null, categories: [], todos: [], schedule: [], habits: [], habitLogs: [],
   timers: [], birthdays: [], water: [], recurring: [], exercises: [], workouts: [], sets: [], pushups: [], inspiration: [],
-  projects: [], projectTasks: [], projectProgress: [],
+  projects: [], projectTasks: [], projectProgress: [], countdowns: [],
 };
 
 type ListKey = Exclude<keyof DataState, "loading" | "settings">;
@@ -41,7 +42,7 @@ const TABLES: Record<ListKey, string> = {
   categories: "categories", todos: "todos", schedule: "schedule_items", habits: "habits", habitLogs: "habit_logs",
   timers: "habit_timers", birthdays: "birthdays", water: "water_logs", recurring: "recurring_todos",
   exercises: "exercises", workouts: "workouts", sets: "workout_sets", pushups: "pushup_logs", inspiration: "inspiration",
-  projects: "project_sources", projectTasks: "project_tasks", projectProgress: "project_progress",
+  projects: "project_sources", projectTasks: "project_tasks", projectProgress: "project_progress", countdowns: "countdowns",
 };
 
 export type NewTodo = Partial<Omit<Todo, "id">> & { title: string };
@@ -81,7 +82,7 @@ function useDataStore() {
         return r.data as T;
       });
     try {
-      const [settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring, exercises, workouts, sets, pushups, inspiration, projects, projectTasks, projectProgress] = await Promise.all([
+      const [settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring, exercises, workouts, sets, pushups, inspiration, countdowns, projects, projectTasks, projectProgress] = await Promise.all([
         q<Settings>(supabase.from("settings").select("*").maybeSingle()),
         q<Category[]>(supabase.from("categories").select("*").order("sort")),
         q<Todo[]>(supabase.from("todos").select("*").is("archived_at", null).order("due_date", { nullsFirst: false }).limit(2000)),
@@ -97,11 +98,12 @@ function useDataStore() {
         q<WorkoutSet[]>(supabase.from("workout_sets").select("*").gte("created_at", `${since}T00:00:00Z`).order("created_at").limit(20000)),
         q<PushupLog[]>(supabase.from("pushup_logs").select("*").gte("log_date", since).order("created_at").limit(10000)),
         q<Inspiration[]>(supabase.from("inspiration").select("*").order("sotd_date", { ascending: false }).limit(2000)),
+        q<Countdown[]>(supabase.from("countdowns").select("*").order("datum")),
         ...projectQueries(since),
       ] as const);
       setState({
         loading: false, settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring, exercises, workouts, sets, pushups,
-        inspiration, projects: projects as ProjectSource[], projectTasks: projectTasks as ProjectTask[], projectProgress: projectProgress as ProjectProgress[],
+        inspiration, countdowns, projects: projects as ProjectSource[], projectTasks: projectTasks as ProjectTask[], projectProgress: projectProgress as ProjectProgress[],
       });
     } catch (e) {
       setState((s) => ({ ...s, loading: false }));
@@ -321,6 +323,11 @@ function useDataStore() {
     return data as { f1: number; roda: number; oranje: number; upserted: number };
   }, [fail, reloadTodos]);
 
+  // ── Aftellen / sinds
+  const saveCountdown = useCallback((c: Partial<Countdown> & { titel: string; datum: string; soort: Countdown["soort"] }) =>
+    upsert("countdowns", { emoji: "📅", created_at: new Date().toISOString(), ...c } as Countdown), [upsert]);
+  const deleteCountdown = useCallback((id: string) => removeRow("countdowns", id), [removeRow]);
+
   // ── Projecten
   const reloadProjects = useCallback(async () => {
     try {
@@ -427,7 +434,7 @@ function useDataStore() {
     saveRecurring, deleteRecurring,
     updateSettings, syncEvents, decideInspiration, updateInspiration, syncAwwwards,
     reloadProjects, syncProjects, saveProject, updateProject, deleteProject, reorderProjects,
-    addProjectTask, toggleProjectTask, deleteProjectTask,
+    addProjectTask, toggleProjectTask, deleteProjectTask, saveCountdown, deleteCountdown,
   };
 }
 

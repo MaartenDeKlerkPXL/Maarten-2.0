@@ -23,7 +23,7 @@ export default function AgendaPage() {
       Object.fromEntries(
         week.map((d) => [d, [...new Set(agendaFor(d, data).map((i) => i.color))].slice(0, 4)]),
       ),
-    [week.join(), data.schedule, data.todos, data.birthdays, data.categories], // eslint-disable-line
+    [week.join(), data.schedule, data.todos, data.birthdays, data.categories, data.projects, data.projectTasks], // eslint-disable-line
   );
 
   const shift = (days: number) => setSelected(addIsoDays(selected, days));

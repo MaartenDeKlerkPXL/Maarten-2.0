@@ -1,4 +1,4 @@
-export type Source = "user" | "f1" | "roda" | "recurring";
+export type Source = "user" | "f1" | "roda" | "recurring" | "oranje";
 
 export interface Settings {
   user_id: string;
@@ -19,6 +19,8 @@ export interface Settings {
   pushup_step: number;
   pushup_goal: number;
   pushup_current_target: number;
+  oranje_push: boolean;
+  project_week_push: boolean;
 }
 
 export interface Category {
@@ -178,4 +180,47 @@ export interface Inspiration {
   rating: 1 | 2 | 3 | null;
   note: string | null;
   decided_at: string | null;
+}
+
+export interface ProjectSource {
+  id: string;
+  type: "github" | "handmatig";
+  repo_owner: string | null;
+  repo_name: string | null;
+  naam: string;
+  categorie: string | null;
+  kleur: string;
+  /** prioriteit: lager = belangrijker (sleepbaar) */
+  volgorde: number;
+  focus_deze_week: boolean;
+  gepauzeerd: boolean;
+  beschrijving: string | null;
+  standaard_branch: string | null;
+  todo_pad: string | null;
+  laatste_sync: string | null;
+  sync_status: "nieuw" | "ok" | "geen_todo" | "fout";
+  sync_fout: string | null;
+  created_at: string;
+}
+
+export interface ProjectTask {
+  id: string;
+  project_id: string;
+  sectie: string | null;
+  tekst: string;
+  afgerond: boolean;
+  prioriteit: number;
+  tags: string[];
+  deadline: string | null;
+  volgorde: number;
+  bron: "github" | "handmatig";
+}
+
+export interface ProjectProgress {
+  id: string;
+  project_id: string;
+  datum: string;
+  voortgang: number;
+  afgerond: number;
+  totaal: number;
 }

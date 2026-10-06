@@ -58,6 +58,8 @@ export function UpcomingCard({ onOpenTodo }: { onOpenTodo: (t: Todo) => void }) 
       todos.filter((t) => t.source === source && !t.done_at && t.due_date && t.due_date >= today).sort((a, b) => (a.due_date! + (a.due_time ?? "")).localeCompare(b.due_date! + (b.due_time ?? "")))[0];
     const roda = nextOf("roda");
     if (roda) out.push({ key: roda.id, date: roda.due_date!, title: roda.title, sub: `${relativeDay(roda.due_date!)}${roda.due_time ? ` · ${hm(roda.due_time)}` : ""}`, icon: <Trophy className="size-4" />, color: "#FACC15", todo: roda });
+    const oranje = nextOf("oranje");
+    if (oranje) out.push({ key: oranje.id, date: oranje.due_date!, title: oranje.title, sub: `${relativeDay(oranje.due_date!)}${oranje.due_time ? ` · ${hm(oranje.due_time)}` : ""}`, icon: <Trophy className="size-4" />, color: "#FF7A00", todo: oranje });
     const f1 = nextOf("f1");
     if (f1) out.push({ key: f1.id, date: f1.due_date!, title: f1.title, sub: `${relativeDay(f1.due_date!)}${f1.due_time ? ` · ${hm(f1.due_time)}` : ""}`, icon: <Flag className="size-4" />, color: "#EF4444", todo: f1 });
     for (const h of upcomingHolidays(today, 45)) {
@@ -74,7 +76,7 @@ export function UpcomingCard({ onOpenTodo }: { onOpenTodo: (t: Todo) => void }) 
     const horizon = addIsoDays(today, 30);
     for (const t of todos) {
       if (t.done_at || !t.due_date || t.due_date < today || t.due_date > horizon) continue;
-      if (t.source === "f1" || t.source === "roda") continue;
+      if (t.source === "f1" || t.source === "roda" || t.source === "oranje") continue;
       if (t.remind_days_before?.length || (t.is_event && t.source === "recurring")) {
         out.push({ key: t.id, date: t.due_date, title: t.title, sub: `${relativeDay(t.due_date)} · ${inDays(daysBetween(today, t.due_date))}`, icon: <span className="text-sm">📌</span>, color: "#60A5FA", todo: t });
       }

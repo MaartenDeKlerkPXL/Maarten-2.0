@@ -11,6 +11,7 @@ const PRIORITY_COLORS = ["", "#60A5FA", "#FBBF24", "#F87171"];
 export function SourceBadge({ source }: { source: Todo["source"] }) {
   if (source === "f1") return <span className="rounded-md bg-red-500/15 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-red-300">F1</span>;
   if (source === "roda") return <span className="rounded-md bg-yellow-400/15 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-yellow-300">RODA</span>;
+  if (source === "oranje") return <span className="rounded-md bg-orange-500/15 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-orange-300">ORANJE</span>;
   if (source === "recurring") return <Repeat className="size-3 text-faint" />;
   return null;
 }

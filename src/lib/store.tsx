@@ -3,9 +3,10 @@ import { supabase } from "./supabase";
 import { addIsoDays, todayIso } from "./dates";
 import { useToast } from "../components/Toast";
 import type {
-  Birthday, Category, Exercise, Habit, HabitLog, HabitTimer, Inspiration, PushupLog, RecurringTodo, ScheduleItem, Settings,
-  Todo, WaterLog, Workout, WorkoutSet,
+  Birthday, Category, Exercise, Habit, HabitLog, HabitTimer, Inspiration, ProjectProgress, ProjectSource, ProjectTask, PushupLog,
+  RecurringTodo, ScheduleItem, Settings, Todo, WaterLog, Workout, WorkoutSet,
 } from "./types";
+import { parseTaskText } from "../../supabase/functions/_shared/todoMarkdown.ts";
 
 interface DataState {
   loading: boolean;
@@ -24,11 +25,15 @@ interface DataState {
   sets: WorkoutSet[];
   pushups: PushupLog[];
   inspiration: Inspiration[];
+  projects: ProjectSource[];
+  projectTasks: ProjectTask[];
+  projectProgress: ProjectProgress[];
 }
 
 const EMPTY: DataState = {
   loading: true, settings: null, categories: [], todos: [], schedule: [], habits: [], habitLogs: [],
   timers: [], birthdays: [], water: [], recurring: [], exercises: [], workouts: [], sets: [], pushups: [], inspiration: [],
+  projects: [], projectTasks: [], projectProgress: [],
 };
 
 type ListKey = Exclude<keyof DataState, "loading" | "settings">;
@@ -36,9 +41,24 @@ const TABLES: Record<ListKey, string> = {
   categories: "categories", todos: "todos", schedule: "schedule_items", habits: "habits", habitLogs: "habit_logs",
   timers: "habit_timers", birthdays: "birthdays", water: "water_logs", recurring: "recurring_todos",
   exercises: "exercises", workouts: "workouts", sets: "workout_sets", pushups: "pushup_logs", inspiration: "inspiration",
+  projects: "project_sources", projectTasks: "project_tasks", projectProgress: "project_progress",
 };
 
 export type NewTodo = Partial<Omit<Todo, "id">> & { title: string };
+
+const unwrap = <T,>(p: PromiseLike<{ data: T | null; error: unknown }>) =>
+  Promise.resolve(p).then((r) => {
+    if (r.error) throw r.error;
+    return r.data as T;
+  });
+
+function projectQueries(since: string) {
+  return [
+    unwrap<ProjectSource[]>(supabase.from("project_sources").select("*").order("volgorde").order("created_at")),
+    unwrap<ProjectTask[]>(supabase.from("project_tasks").select("*").order("volgorde").limit(10000)),
+    unwrap<ProjectProgress[]>(supabase.from("project_progress").select("*").gte("datum", since).order("datum").limit(20000)),
+  ] as const;
+}
 
 function useDataStore() {
   const toast = useToast();
@@ -61,7 +81,7 @@ function useDataStore() {
         return r.data as T;
       });
     try {
-      const [settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring, exercises, workouts, sets, pushups, inspiration] = await Promise.all([
+      const [settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring, exercises, workouts, sets, pushups, inspiration, projects, projectTasks, projectProgress] = await Promise.all([
         q<Settings>(supabase.from("settings").select("*").maybeSingle()),
         q<Category[]>(supabase.from("categories").select("*").order("sort")),
         q<Todo[]>(supabase.from("todos").select("*").is("archived_at", null).order("due_date", { nullsFirst: false }).limit(2000)),
@@ -77,8 +97,12 @@ function useDataStore() {
         q<WorkoutSet[]>(supabase.from("workout_sets").select("*").gte("created_at", `${since}T00:00:00Z`).order("created_at").limit(20000)),
         q<PushupLog[]>(supabase.from("pushup_logs").select("*").gte("log_date", since).order("created_at").limit(10000)),
         q<Inspiration[]>(supabase.from("inspiration").select("*").order("sotd_date", { ascending: false }).limit(2000)),
-      ]);
-      setState({ loading: false, settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring, exercises, workouts, sets, pushups, inspiration });
+        ...projectQueries(since),
+      ] as const);
+      setState({
+        loading: false, settings, categories, todos, schedule, habits, habitLogs, timers, birthdays, water, recurring, exercises, workouts, sets, pushups,
+        inspiration, projects: projects as ProjectSource[], projectTasks: projectTasks as ProjectTask[], projectProgress: projectProgress as ProjectProgress[],
+      });
     } catch (e) {
       setState((s) => ({ ...s, loading: false }));
       fail(e);
@@ -294,8 +318,104 @@ function useDataStore() {
       return null;
     }
     await reloadTodos();
-    return data as { f1: number; roda: number; upserted: number };
+    return data as { f1: number; roda: number; oranje: number; upserted: number };
   }, [fail, reloadTodos]);
+
+  // ── Projecten
+  const reloadProjects = useCallback(async () => {
+    try {
+      const [projects, projectTasks, projectProgress] = await Promise.all(projectQueries(addIsoDays(todayIso(), -400)));
+      setState((s) => ({ ...s, projects, projectTasks, projectProgress }));
+    } catch (e) {
+      fail(e);
+    }
+  }, [fail]);
+
+  const syncProjects = useCallback(async (projectId?: string) => {
+    const { data, error } = await supabase.functions.invoke("sync-project-todos", { body: projectId ? { project_id: projectId } : {} });
+    if (error) {
+      fail(error);
+      return null;
+    }
+    await reloadProjects();
+    return data as { projecten: number; bijgewerkt: number; ongewijzigd: number; geen_todo: number; fouten: number };
+  }, [fail, reloadProjects]);
+
+  const saveProject = useCallback((p: Partial<ProjectSource> & { naam: string }) =>
+    upsert("projects", {
+      type: "handmatig", repo_owner: null, repo_name: null, categorie: null, kleur: "#3B82F6", focus_deze_week: false, gepauzeerd: false,
+      beschrijving: null, standaard_branch: null, todo_pad: null, laatste_sync: null, sync_status: "nieuw", sync_fout: null,
+      volgorde: Math.max(0, ...stateRef.current.projects.map((x) => x.volgorde)) + 1, created_at: new Date().toISOString(), ...p,
+    } as ProjectSource), [upsert]);
+
+  const updateProject = useCallback((id: string, patch: Partial<ProjectSource>) => patchRow("projects", id, patch), [patchRow]);
+
+  const deleteProject = useCallback(async (id: string) => {
+    setState((s) => ({
+      ...s, projectTasks: s.projectTasks.filter((t) => t.project_id !== id), projectProgress: s.projectProgress.filter((r) => r.project_id !== id),
+    }));
+    await removeRow("projects", id);
+  }, [removeRow]);
+
+  /** Prioriteit = volgorde in de lijst (slepen). */
+  const reorderProjects = useCallback(async (ids: string[]) => {
+    const rank = new Map(ids.map((id, i) => [id, i + 1]));
+    const changed = stateRef.current.projects.filter((p) => rank.has(p.id) && p.volgorde !== rank.get(p.id));
+    if (!changed.length) return;
+    setState((s) => ({
+      ...s,
+      projects: s.projects.map((p) => (rank.has(p.id) ? { ...p, volgorde: rank.get(p.id)! } : p)).sort((a, b) => a.volgorde - b.volgorde),
+    }));
+    const results = await Promise.all(changed.map((p) => supabase.from("project_sources").update({ volgorde: rank.get(p.id) }).eq("id", p.id)));
+    const err = results.find((r) => r.error)?.error;
+    if (err) {
+      fail(err);
+      reloadProjects();
+    }
+  }, [fail, reloadProjects]);
+
+  /** Eén voortgangsrij per dag, ook voor handmatige projecten (grafiek + "ligt stil"). */
+  const recordProgress = useCallback(async (projectId: string, tasks: ProjectTask[]) => {
+    const mine = tasks.filter((t) => t.project_id === projectId);
+    const afgerond = mine.filter((t) => t.afgerond).length;
+    const row = {
+      project_id: projectId, datum: todayIso(), afgerond, totaal: mine.length,
+      voortgang: mine.length ? Math.round((afgerond / mine.length) * 10000) / 10000 : 0,
+    };
+    setState((s) => {
+      const rest = s.projectProgress.filter((r) => !(r.project_id === projectId && r.datum === row.datum));
+      return { ...s, projectProgress: [...rest, { id: crypto.randomUUID(), ...row }] };
+    });
+    const { error } = await supabase.from("project_progress").upsert(row, { onConflict: "project_id,datum" });
+    if (error) fail(error);
+  }, [fail]);
+
+  const addProjectTask = useCallback(async (projectId: string, input: string, sectie: string | null = null) => {
+    const parsed = parseTaskText(input, todayIso());
+    if (!parsed.tekst) return null;
+    const mine = stateRef.current.projectTasks.filter((t) => t.project_id === projectId);
+    const task: ProjectTask = {
+      id: crypto.randomUUID(), project_id: projectId, sectie, afgerond: false, bron: "handmatig",
+      volgorde: Math.max(-1, ...mine.map((t) => t.volgorde)) + 1, ...parsed,
+    };
+    await upsert("projectTasks", task);
+    recordProgress(projectId, [...stateRef.current.projectTasks.filter((t) => t.id !== task.id), task]);
+    return task;
+  }, [recordProgress, upsert]);
+
+  const toggleProjectTask = useCallback(async (task: ProjectTask) => {
+    if (task.bron !== "handmatig") return;
+    const next = stateRef.current.projectTasks.map((t) => (t.id === task.id ? { ...t, afgerond: !task.afgerond } : t));
+    await patchRow("projectTasks", task.id, { afgerond: !task.afgerond });
+    recordProgress(task.project_id, next);
+  }, [patchRow, recordProgress]);
+
+  const deleteProjectTask = useCallback(async (task: ProjectTask) => {
+    if (task.bron !== "handmatig") return;
+    const next = stateRef.current.projectTasks.filter((t) => t.id !== task.id);
+    await removeRow("projectTasks", task.id);
+    recordProgress(task.project_id, next);
+  }, [recordProgress, removeRow]);
 
   return {
     ...state, refresh, reloadTodos,
@@ -306,6 +426,8 @@ function useDataStore() {
     saveBirthday, deleteBirthday, saveSchedule, deleteSchedule, saveCategory,
     saveRecurring, deleteRecurring,
     updateSettings, syncEvents, decideInspiration, updateInspiration, syncAwwwards,
+    reloadProjects, syncProjects, saveProject, updateProject, deleteProject, reorderProjects,
+    addProjectTask, toggleProjectTask, deleteProjectTask,
   };
 }
 

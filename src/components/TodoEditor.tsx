@@ -186,7 +186,7 @@ export function TodoEditor({ draft, onClose }: { draft: TodoDraft | null; onClos
         </Field>
         {synced && (
           <p className="text-xs text-faint">
-            Dit item wordt automatisch bijgewerkt ({existing.source === "f1" ? "Formule 1-kalender" : existing.source === "roda" ? "Roda JC-programma" : "terugkerende taak"}).
+            Dit item wordt automatisch bijgewerkt ({existing.source === "f1" ? "Formule 1-kalender" : existing.source === "roda" ? "Roda JC-programma" : existing.source === "oranje" ? "programma van het Nederlands elftal" : "terugkerende taak"}).
           </p>
         )}
         <button type="submit" className="hidden" />

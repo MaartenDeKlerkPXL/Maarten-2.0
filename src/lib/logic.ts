@@ -1,6 +1,6 @@
 import { addIsoDays, daysBetween, iso, isoDow, nextBirthday, parseIso, todayIso, weekStart } from "./dates";
 import { holidayLabel, holidaysOn, isBelgianSchoolFree, isPxlFreeDay, schoolBreakLabel, schoolBreaksOn } from "./holidays";
-import type { Birthday, Category, Habit, HabitLog, ScheduleItem, Todo, WaterLog } from "./types";
+import type { Birthday, Category, Habit, HabitLog, ProjectSource, ProjectTask, ScheduleItem, Todo, WaterLog } from "./types";
 
 // ───────────── Gewoontes ─────────────
 export function logSet(logs: HabitLog[], habitId: string): Set<string> {
@@ -107,7 +107,7 @@ export function upcomingBirthdays(list: Birthday[], today = todayIso()): Upcomin
 // ───────────── Agenda ─────────────
 export interface AgendaItem {
   key: string;
-  kind: "class" | "todo" | "holiday" | "birthday";
+  kind: "class" | "todo" | "holiday" | "birthday" | "project";
   title: string;
   subtitle?: string | null;
   start: string | null; // HH:MM
@@ -115,12 +115,17 @@ export interface AgendaItem {
   color: string;
   todo?: Todo;
   schedule?: ScheduleItem;
+  /** projecttaak met deadline: tik opent het project */
+  projectId?: string;
   done?: boolean;
 }
 
 export function agendaFor(
   date: string,
-  data: { schedule: ScheduleItem[]; todos: Todo[]; birthdays: Birthday[]; categories: Category[] },
+  data: {
+    schedule: ScheduleItem[]; todos: Todo[]; birthdays: Birthday[]; categories: Category[];
+    projects?: ProjectSource[]; projectTasks?: ProjectTask[];
+  },
 ): AgendaItem[] {
   const cats = new Map(data.categories.map((c) => [c.id, c]));
   const color = (id: string | null) => (id && cats.get(id)?.color) || "#64748B";
@@ -160,6 +165,17 @@ export function agendaFor(
       key: `s-${s.id}`, kind: "class", title: s.title, subtitle: s.location, start: s.start_time.slice(0, 5),
       end: s.end_time.slice(0, 5), color: color(s.category_id), schedule: s,
     });
+  }
+  if (data.projects?.length && data.projectTasks?.length) {
+    const projects = new Map(data.projects.map((p) => [p.id, p]));
+    for (const t of data.projectTasks) {
+      const p = t.deadline === date ? projects.get(t.project_id) : undefined;
+      if (!p) continue;
+      items.push({
+        key: `p-${t.id}`, kind: "project", title: t.tekst, subtitle: p.naam, start: null, end: null,
+        color: p.kleur, projectId: p.id, done: t.afgerond,
+      });
+    }
   }
   for (const t of data.todos) {
     if (t.due_date !== date) continue;

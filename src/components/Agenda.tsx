@@ -1,23 +1,34 @@
 import { useMemo } from "react";
-import { Cake, GraduationCap, MapPin, PartyPopper } from "lucide-react";
+import { Cake, FolderKanban, GraduationCap, MapPin, PartyPopper } from "lucide-react";
 import { useData } from "../lib/store";
 import { agendaFor, type AgendaItem } from "../lib/logic";
 import { fmt, minutesOf } from "../lib/dates";
 import { useNow } from "../lib/hooks";
+import { navigate } from "../lib/router";
 import type { Todo } from "../lib/types";
 import { CheckCircle } from "./ui";
 import { SourceBadge } from "./TodoRow";
 
 export function useAgenda(date: string) {
-  const { schedule, todos, birthdays, categories } = useData();
-  return useMemo(() => agendaFor(date, { schedule, todos, birthdays, categories }), [date, schedule, todos, birthdays, categories]);
+  const { schedule, todos, birthdays, categories, projects, projectTasks } = useData();
+  return useMemo(
+    () => agendaFor(date, { schedule, todos, birthdays, categories, projects, projectTasks }),
+    [date, schedule, todos, birthdays, categories, projects, projectTasks],
+  );
+}
+
+/** Tik op een agenda-item: todo openen of naar het project. */
+function openItem(item: AgendaItem, onOpenTodo?: (t: Todo) => void) {
+  if (item.todo) onOpenTodo?.(item.todo);
+  else if (item.projectId) navigate(`/projecten/${item.projectId}`);
 }
 
 function AllDayChip({ item, onOpenTodo }: { item: AgendaItem; onOpenTodo?: (t: Todo) => void }) {
-  const Icon = item.kind === "birthday" ? Cake : item.kind === "holiday" ? PartyPopper : null;
+  const Icon = item.kind === "birthday" ? Cake : item.kind === "holiday" ? PartyPopper : item.kind === "project" ? FolderKanban : null;
   return (
     <button
-      onClick={() => item.todo && onOpenTodo?.(item.todo)}
+      onClick={() => openItem(item, onOpenTodo)}
+      title={item.subtitle ? `${item.title} · ${item.subtitle}` : item.title}
       className={`inline-flex max-w-full items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium ${item.done ? "line-through opacity-50" : ""}`}
       style={{ background: `${item.color}1f`, color: item.color }}
     >
@@ -236,10 +247,10 @@ function AllDayCell({ date, onOpenTodo }: { date: string; onOpenTodo: (t: Todo) 
       {items.map((i) => (
         <button
           key={i.key}
-          onClick={() => i.todo && onOpenTodo(i.todo)}
+          onClick={() => openItem(i, onOpenTodo)}
           className={`truncate rounded-md px-1.5 py-0.5 text-left text-[11px] font-medium ${i.done ? "line-through opacity-50" : ""}`}
           style={{ background: `${i.color}22`, color: i.color }}
-          title={i.title}
+          title={i.subtitle ? `${i.title} · ${i.subtitle}` : i.title}
         >
           {i.title}
         </button>

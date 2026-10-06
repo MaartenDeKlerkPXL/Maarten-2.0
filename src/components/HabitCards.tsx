@@ -26,6 +26,16 @@ function HabitLink({ habit }: { habit: Habit }) {
   );
 }
 
+/** Naam van de gewoonte; met een link is de naam zelf ook aanklikbaar. */
+function HabitName({ habit }: { habit: Habit }) {
+  if (!habit.url) return <p className="truncate font-semibold">{habit.name}</p>;
+  return (
+    <a href={habit.url} target="_blank" rel="noopener noreferrer" className="block truncate font-semibold decoration-2 underline-offset-4 hover:underline" style={{ textDecorationColor: `${habit.color}99` }}>
+      {habit.name}
+    </a>
+  );
+}
+
 function useDone(habitId: string) {
   const { habitLogs } = useData();
   return useMemo(() => logSet(habitLogs, habitId), [habitLogs, habitId]);
@@ -78,7 +88,7 @@ export function DailyHabitCard({ habit }: { habit: Habit }) {
         </div>
       )}
       <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold">{habit.name}</p>
+        <HabitName habit={habit} />
         <p className="mt-0.5 flex items-center gap-2 text-xs text-muted">
           {running ? (
             <span className="tabular font-semibold" style={{ color: habit.color }}>
@@ -155,7 +165,7 @@ export function WeeklyGoalCard({ habit }: { habit: Habit }) {
           <span className="text-xl">{habit.emoji}</span>
         </Ring>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold">{habit.name}</p>
+          <HabitName habit={habit} />
           <p className="mt-0.5 text-xs text-muted">
             <span className="tabular font-semibold text-text">{count}</span>/{habit.target_per_week} deze week
             {streak > 1 && <span className="ml-2 text-orange-300">🔥 {streak} weken</span>}
